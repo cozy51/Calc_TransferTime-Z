@@ -1,15 +1,16 @@
 const motionFields = [
-  { key: 'a1', group: 'acceleration', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000, unloadDown: 2500, unloadUp: 3000 },
-  { key: 'a2', group: 'acceleration', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'sh', group: 'distance', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500, unloadDown: 2500, unloadUp: 2500 },
+  { key: 's1', group: 'distance', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19, unloadDown: 0, unloadUp: 0 },
+  { key: 's5', group: 'distance', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12, unloadDown: 22, unloadUp: 0 },
   { key: 'v1', group: 'speed', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40, unloadDown: 20, unloadUp: 40 },
   { key: 'v2', group: 'speed', label: '昇降速度', symbol: 'V2', unit: 'mm/s', down: 1900, up: 1500, unloadDown: 1000, unloadUp: 1900 },
   { key: 'v3', group: 'speed', label: '下端クリープ速度', symbol: 'V3', unit: 'mm/s', down: 40, up: 40, unloadDown: 20, unloadUp: 40 },
-  { key: 's1', group: 'distance', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19, unloadDown: 0, unloadUp: 0 },
-  { key: 's5', group: 'distance', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12, unloadDown: 22, unloadUp: 0 },
-  { key: 'sh', group: 'distance', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500, unloadDown: 2500, unloadUp: 2500 },
+  { key: 'a1', group: 'acceleration', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'a2', group: 'acceleration', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500, unloadDown: 2500, unloadUp: 3000 },
   { key: 'tr', group: 'delay', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
 const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
+const chartSeriesNames = ['荷つかみ下降', '荷つかみ上昇', '荷おろし下降', '荷おろし上昇'];
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
 const inputContainer = document.getElementById('motionInputs');
@@ -123,11 +124,36 @@ function drawSpeedChart(series = []) {
     context.beginPath(); context.moveTo(x(result.tt), y(values.v3)); context.lineTo(x(result.tt), y(0)); context.stroke();
     context.setLineDash([]);
   });
+
+  if (series.length) {
+    const boxWidth = width < 500 ? 145 : 170;
+    const rowHeight = 23;
+    const boxX = width - margin.right - boxWidth;
+    const boxY = margin.top + 9;
+    context.fillStyle = 'rgba(255,255,255,.92)';
+    context.strokeStyle = '#d5e1ec';
+    context.lineWidth = 1;
+    context.fillRect(boxX, boxY, boxWidth, rowHeight * series.length + 10);
+    context.strokeRect(boxX, boxY, boxWidth, rowHeight * series.length + 10);
+    context.textBaseline = 'middle';
+    context.font = `700 ${width < 500 ? 10 : 11}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    series.forEach(({ result, color }, index) => {
+      const rowY = boxY + 16 + index * rowHeight;
+      context.fillStyle = color;
+      context.fillRect(boxX + 9, rowY - 2, 17, 4);
+      context.textAlign = 'left';
+      context.fillText(chartSeriesNames[index], boxX + 32, rowY);
+      context.textAlign = 'right';
+      context.fillText(`${format(result.tt)} s`, boxX + boxWidth - 9, rowY);
+    });
+  }
 }
 function renderEmpty() {
   ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
   setText('totalMilliseconds', '— ms');
   setText('unloadTotalMilliseconds', '— ms');
+  setText('pickupTotalFormula', '—');
+  setText('unloadTotalFormula', '—');
   drawSpeedChart();
   ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { for (let i = 1; i <= 5; i += 1) { setText(`${direction}-distance-${i}`, '—'); setText(`${direction}-time-${i}`, '—'); } });
 }
@@ -174,6 +200,8 @@ function calculate() {
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
   setText('unloadTotalTime', format(unloadTotal));
   setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
+  setText('pickupTotalFormula', `${format(downResult.tt)} + ${format(down.tr)} + ${format(tg)} + ${format(upResult.tt)} + ${format(up.tr)} + ${format(servo)} = ${format(total)} 秒`);
+  setText('unloadTotalFormula', `${format(unloadDownResult.tt)} + ${format(unloadDown.tr)} + ${format(unloadTg)} + ${format(unloadUpResult.tt)} + ${format(unloadUp.tr)} + ${format(unloadServo)} = ${format(unloadTotal)} 秒`);
   setText('transferTime', `${format(actualTransfer)} 秒`);
   setText('servoResult', `${format(servo)} 秒`);
   setText('downMotion', `${format(downResult.tt)} 秒`);

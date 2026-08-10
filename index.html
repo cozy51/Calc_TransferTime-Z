@@ -36,11 +36,18 @@
 
         <div class="input-group extras-group">
           <h3>共通時間</h3>
-          <div class="input-grid">
-            <label><span>荷つかみグリップ時間 <b>TG</b></span><span class="field"><input id="tg" type="number" min="0" step="any" value="0.27" /><em>s</em></span></label>
-            <label><span>荷おろしグリップ時間 <b>TG</b></span><span class="field"><input id="unload-tg" type="number" min="0" step="any" value="0.21" /><em>s</em></span></label>
-            <label><span>荷つかみサーボ切替時間</span><span class="field"><input id="servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
-            <label><span>荷おろしサーボ切替時間</span><span class="field"><input id="unload-servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
+          <div class="extras-table">
+            <div class="extras-head"><span>項目・記号</span><span>単位</span><strong>荷つかみ</strong><strong>荷おろし</strong></div>
+            <div class="extras-row">
+              <span class="extras-name">グリップ時間 <b>TG</b></span><em>s</em>
+              <span class="field"><input id="tg" aria-label="荷つかみグリップ時間" type="number" min="0" step="any" value="0.27" /></span>
+              <span class="field"><input id="unload-tg" aria-label="荷おろしグリップ時間" type="number" min="0" step="any" value="0.21" /></span>
+            </div>
+            <div class="extras-row">
+              <span class="extras-name">サーボ切替時間 <b>TS</b></span><em>s</em>
+              <span class="field"><input id="servo" aria-label="荷つかみサーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
+              <span class="field"><input id="unload-servo" aria-label="荷おろしサーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
+            </div>
           </div>
         </div>
       </section>
@@ -58,6 +65,10 @@
             <p>荷おろし総移載時間（Stop − Start）</p>
             <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
             <small id="unloadTotalMilliseconds">— ms</small>
+          </div>
+          <div class="total-equations">
+            <p><b>荷つかみ</b><span>下降TT + 下降TR + TG + 上昇TT + 上昇TR + TS</span><code id="pickupTotalFormula">—</code></p>
+            <p><b>荷おろし</b><span>下降TT + 下降TR + TG + 上昇TT + 上昇TR + TS</span><code id="unloadTotalFormula">—</code></p>
           </div>
           <div class="summary-grid">
             <div><span>実移載時間</span><strong id="transferTime">— <small>秒</small></strong></div>
