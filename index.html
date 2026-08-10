@@ -67,8 +67,8 @@
             <small id="unloadTotalMilliseconds">— ms</small>
           </div>
           <div class="total-equations">
-            <p><b>荷つかみ動作</b><span>TC = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</span><code id="pickupTotalFormula">—</code></p>
-            <p><b>荷おろし動作</b><span>TC = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</span><code id="unloadTotalFormula">—</code></p>
+            <p><b>荷つかみ動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="pickupTotalFormula">—</code></p>
+            <p><b>荷おろし動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="unloadTotalFormula">—</code></p>
           </div>
           <div class="motion-summary-block pickup-summary">
             <h3>荷つかみ動作・内訳</h3>
@@ -92,7 +92,7 @@
               <div class="cycle-label unload-up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadUpDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="unloadUpMotion">— 秒</strong></div>
             </div>
           </div>
-          <div class="formula"><b>TC</b> = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</div>
+          <div class="formula"><b>TM</b> = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）<br /><b>TC</b> = TM + <mark>TS</mark></div>
         </div>
 
         <div class="panel chart-panel">
@@ -147,8 +147,8 @@
           <div class="formula-section total-formulas">
             <h3>合計時間</h3>
             <div class="total-formula-row"><b>動作時間 <span>TT</span></b><code>TT = T1 + T2 + T3 + T4 + T5</code></div>
-            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）</code></div>
-            <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + TS</code></div>
+            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</code></div>
+            <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + <mark>TS</mark></code></div>
           </div>
         </div>
       </section>

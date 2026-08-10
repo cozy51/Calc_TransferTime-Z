@@ -61,6 +61,9 @@ function calculateMotion(values) {
 }
 
 function setText(id, value) { document.getElementById(id).textContent = value; }
+function setTotalFormula(id, downDelay, downMotion, grip, upDelay, upMotion, transfer, servo, total) {
+  document.getElementById(id).innerHTML = `TM = ${format(downDelay)} + ${format(downMotion)} + <mark>${format(grip)}</mark> + ${format(upDelay)} + ${format(upMotion)} = ${format(transfer)} 秒<br>TC = ${format(transfer)} + <mark>${format(servo)}</mark> = ${format(total)} 秒`;
+}
 function drawSpeedChart(series = []) {
   const canvas = document.getElementById('speedChart');
   const container = canvas.parentElement;
@@ -206,8 +209,8 @@ function calculate() {
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
   setText('unloadTotalTime', format(unloadTotal));
   setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
-  setText('pickupTotalFormula', `TC = ${format(down.tr)} + ${format(downResult.tt)} + ${format(tg)} + ${format(up.tr)} + ${format(upResult.tt)} + ${format(servo)} = ${format(total)} 秒`);
-  setText('unloadTotalFormula', `TC = ${format(unloadDown.tr)} + ${format(unloadDownResult.tt)} + ${format(unloadTg)} + ${format(unloadUp.tr)} + ${format(unloadUpResult.tt)} + ${format(unloadServo)} = ${format(unloadTotal)} 秒`);
+  setTotalFormula('pickupTotalFormula', down.tr, downResult.tt, tg, up.tr, upResult.tt, actualTransfer, servo, total);
+  setTotalFormula('unloadTotalFormula', unloadDown.tr, unloadDownResult.tt, unloadTg, unloadUp.tr, unloadUpResult.tt, unloadActualTransfer, unloadServo, unloadTotal);
   setText('transferTime', `${format(actualTransfer)} 秒`);
   setText('servoResult', `${format(servo)} 秒`);
   setText('downMotion', `${format(downResult.tt)} 秒`);
