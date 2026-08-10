@@ -20,6 +20,7 @@
     </header>
 
     <main class="layout">
+      <div class="input-column">
       <section class="panel input-panel" aria-labelledby="input-title">
         <div class="section-heading">
           <div><span class="step">01</span><h2 id="input-title">移載動作条件</h2></div>
@@ -51,6 +52,37 @@
           </div>
         </div>
       </section>
+
+        <div class="panel calculation-panel">
+          <div class="calculation-heading">
+            <div>
+              <h2>計算式</h2>
+              <p>入力値から各区間と移載時間を次の式で計算します。</p>
+            </div>
+            <span>FORMULA</span>
+          </div>
+          <div class="formula-section">
+            <h3>区間時間・距離</h3>
+            <p class="calculation-order"><b>計算順</b> 左から右、上から下へ計算します：T1 → T2 → S2 → T4 → S4 → S3 → T3 → T5</p>
+            <div class="formula-grid">
+              <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
+              <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
+              <div><b>S2</b><code>V2 × T2 ÷ 2</code><span>昇降加速距離</span></div>
+              <div><b>T4</b><code>V2 ÷ A2</code><span>減速時間</span></div>
+              <div><b>S4</b><code>V2 × T4 ÷ 2</code><span>昇降減速距離</span></div>
+              <div><b>S3</b><code>SH − (S1 + S2 + S4 + S5)</code><span>最高速昇降距離</span></div>
+              <div><b>T3</b><code>S3 ÷ V2</code><span>最高速昇降時間</span></div>
+              <div><b>T5</b><code>S5 ÷ V3</code><span>下端クリープ時間</span></div>
+            </div>
+          </div>
+          <div class="formula-section total-formulas">
+            <h3>合計時間</h3>
+            <div class="total-formula-row"><b>動作時間 <span>TT</span></b><code>TT = T1 + T2 + T3 + T4 + T5</code></div>
+            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</code></div>
+            <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + <mark>TS</mark></code></div>
+          </div>
+        </div>
+      </div>
 
       <section class="results-column" aria-labelledby="result-title" aria-live="polite">
         <div class="panel summary-panel">
@@ -108,7 +140,7 @@
           </div>
           <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
             <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
-            <div id="handUnit" class="hand-unit"><span>ハンドユニット</span><i></i><b></b></div>
+            <div id="handUnit" class="hand-unit"><span>ハンドユニット</span></div>
             <div class="simulation-scale"><span>上端</span><i></i><span>下端</span></div>
           </div>
           <p id="simulationStatus" class="simulation-status" aria-live="polite">動作を選択すると、実際の動作時間 TT に合わせて再生します。</p>
@@ -141,35 +173,7 @@
           </div>
         </div>
 
-        <div class="panel calculation-panel">
-          <div class="calculation-heading">
-            <div>
-              <h2>計算式</h2>
-              <p>入力値から各区間と移載時間を次の式で計算します。</p>
-            </div>
-            <span>FORMULA</span>
-          </div>
-          <div class="formula-section">
-            <h3>区間時間・距離</h3>
-            <p class="calculation-order"><b>計算順</b> 左から右、上から下へ計算します：T1 → T2 → S2 → T4 → S4 → S3 → T3 → T5</p>
-            <div class="formula-grid">
-              <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
-              <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
-              <div><b>S2</b><code>V2 × T2 ÷ 2</code><span>昇降加速距離</span></div>
-              <div><b>T4</b><code>V2 ÷ A2</code><span>減速時間</span></div>
-              <div><b>S4</b><code>V2 × T4 ÷ 2</code><span>昇降減速距離</span></div>
-              <div><b>S3</b><code>SH − (S1 + S2 + S4 + S5)</code><span>最高速昇降距離</span></div>
-              <div><b>T3</b><code>S3 ÷ V2</code><span>最高速昇降時間</span></div>
-              <div><b>T5</b><code>S5 ÷ V3</code><span>下端クリープ時間</span></div>
-            </div>
-          </div>
-          <div class="formula-section total-formulas">
-            <h3>合計時間</h3>
-            <div class="total-formula-row"><b>動作時間 <span>TT</span></b><code>TT = T1 + T2 + T3 + T4 + T5</code></div>
-            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</code></div>
-            <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + <mark>TS</mark></code></div>
-          </div>
-        </div>
+
       </section>
     </main>
     <footer>TransferCycleTime <span>•</span> TOOL Transfer Engineering Calculator</footer>

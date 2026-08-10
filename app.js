@@ -259,7 +259,7 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     if (handAnimation) handAnimation.cancel();
     const isUp = direction === 'up' || direction === 'unloadUp';
     const upper = 'translate(-50%, 0)';
-    const lower = 'translate(-50%, 115px)';
+    const lower = 'translate(-50%, 345px)';
     const duration = Math.max(result.tt * 1000, 300);
     const handUnit = document.getElementById('handUnit');
     const label = button.textContent;
