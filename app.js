@@ -133,12 +133,18 @@ function drawSpeedChart(series = []) {
     context.fillStyle = 'rgba(255,255,255,.92)';
     context.strokeStyle = '#d5e1ec';
     context.lineWidth = 1;
-    context.fillRect(boxX, boxY, boxWidth, rowHeight * series.length + 10);
-    context.strokeRect(boxX, boxY, boxWidth, rowHeight * series.length + 10);
+    const headerHeight = 25;
+    context.fillRect(boxX, boxY, boxWidth, headerHeight + rowHeight * series.length + 8);
+    context.strokeRect(boxX, boxY, boxWidth, headerHeight + rowHeight * series.length + 8);
     context.textBaseline = 'middle';
     context.font = `700 ${width < 500 ? 10 : 11}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    context.fillStyle = '#263c55';
+    context.textAlign = 'left';
+    context.fillText('動作時間 TT', boxX + 9, boxY + 14);
+    context.strokeStyle = '#e2e8ef';
+    context.beginPath(); context.moveTo(boxX, boxY + headerHeight); context.lineTo(boxX + boxWidth, boxY + headerHeight); context.stroke();
     series.forEach(({ result, color }, index) => {
-      const rowY = boxY + 16 + index * rowHeight;
+      const rowY = boxY + headerHeight + 14 + index * rowHeight;
       context.fillStyle = color;
       context.fillRect(boxX + 9, rowY - 2, 17, 4);
       context.textAlign = 'left';

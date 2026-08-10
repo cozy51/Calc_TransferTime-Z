@@ -67,8 +67,8 @@
             <small id="unloadTotalMilliseconds">— ms</small>
           </div>
           <div class="total-equations">
-            <p><b>荷つかみ動作</b><span>TC = TR↓ + TT↓ + TG + TR↑ + TT↑ + TS</span><code id="pickupTotalFormula">—</code></p>
-            <p><b>荷おろし動作</b><span>TC = TR↓ + TT↓ + TG + TR↑ + TT↑ + TS</span><code id="unloadTotalFormula">—</code></p>
+            <p><b>荷つかみ動作</b><span>TC = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</span><code id="pickupTotalFormula">—</code></p>
+            <p><b>荷おろし動作</b><span>TC = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</span><code id="unloadTotalFormula">—</code></p>
           </div>
           <div class="motion-summary-block pickup-summary">
             <h3>荷つかみ動作・内訳</h3>
@@ -77,8 +77,8 @@
               <div class="auxiliary-time"><span>サーボ切替時間 <b>TS</b></span><strong id="servoResult">— <small>秒</small></strong></div>
             </div>
             <div class="cycle-summary">
-              <div class="cycle-label down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="downDelay">— 秒</strong></div><div><span>昇降動作時間 TT</span><strong id="downMotion">— 秒</strong></div>
-              <div class="cycle-label up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="upDelay">— 秒</strong></div><div><span>昇降動作時間 TT</span><strong id="upMotion">— 秒</strong></div>
+              <div class="cycle-label down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="downDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="downMotion">— 秒</strong></div>
+              <div class="cycle-label up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="upDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="upMotion">— 秒</strong></div>
             </div>
           </div>
           <div class="motion-summary-block unload-summary">
@@ -88,11 +88,11 @@
               <div class="auxiliary-time"><span>サーボ切替時間 <b>TS</b></span><strong id="unloadServoResult">— <small>秒</small></strong></div>
             </div>
             <div class="cycle-summary">
-              <div class="cycle-label unload-down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadDownDelay">— 秒</strong></div><div><span>昇降動作時間 TT</span><strong id="unloadDownMotion">— 秒</strong></div>
-              <div class="cycle-label unload-up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadUpDelay">— 秒</strong></div><div><span>昇降動作時間 TT</span><strong id="unloadUpMotion">— 秒</strong></div>
+              <div class="cycle-label unload-down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadDownDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="unloadDownMotion">— 秒</strong></div>
+              <div class="cycle-label unload-up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadUpDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="unloadUpMotion">— 秒</strong></div>
             </div>
           </div>
-          <div class="formula"><b>TC</b> = TR↓ + TT↓ + TG + TR↑ + TT↑ + TS</div>
+          <div class="formula"><b>TC</b> = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）+ TS</div>
         </div>
 
         <div class="panel chart-panel">
@@ -104,7 +104,7 @@
             <canvas id="speedChart" role="img" aria-label="荷つかみ動作と荷おろし動作の下降時・上昇時速度時間線図"></canvas>
           </div>
           <div class="chart-mobile-legend"><span class="down-line">荷つかみ動作・下降時</span><span class="up-line">荷つかみ動作・上昇時</span><span class="unload-down-line">荷おろし動作・下降時</span><span class="unload-up-line">荷おろし動作・上昇時</span></div>
-          <p class="chart-note">各区間の所要時間に沿って、クリープ・加速・最高速・減速の速度推移を表示しています。</p>
+          <p class="chart-note">グラフ内の時間は、各方向の動作時間 TT です。クリープ・加速・最高速・減速の速度推移を表示しています。</p>
         </div>
 
         <div class="panel detail-panel">
@@ -132,6 +132,7 @@
           </div>
           <div class="formula-section">
             <h3>区間時間・距離</h3>
+            <p class="calculation-order"><b>計算順</b> 左から右、上から下へ計算します：T1 → T2 → S2 → T4 → S4 → S3 → T3 → T5</p>
             <div class="formula-grid">
               <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
               <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
@@ -145,8 +146,8 @@
           </div>
           <div class="formula-section total-formulas">
             <h3>合計時間</h3>
-            <div class="total-formula-row"><b>昇降動作時間 <span>TT</span></b><code>T1 + T2 + T3 + T4 + T5</code></div>
-            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR↓ + TT↓ + TG + TR↑ + TT↑</code></div>
+            <div class="total-formula-row"><b>動作時間 <span>TT</span></b><code>TT = T1 + T2 + T3 + T4 + T5</code></div>
+            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ TG + TR（上昇時）+ TT（上昇時）</code></div>
             <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + TS</code></div>
           </div>
         </div>
