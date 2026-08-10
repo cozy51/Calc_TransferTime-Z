@@ -51,15 +51,20 @@ function readDirection(direction) {
 
 function calculateMotion(values) {
   const t1 = values.s1 / values.v1;
-  const t2 = values.v2 / values.a1;
-  const s2 = values.v2 * t2 / 2;
-  const t4 = values.v2 / values.a2;
-  const s4 = values.v2 * t4 / 2;
+  const availableDistance = values.sh - values.s1 - values.s5;
+  const requestedAccelerationDistance = values.v2 ** 2 / (2 * values.a1) + values.v2 ** 2 / (2 * values.a2);
+  const peakSpeed = availableDistance >= requestedAccelerationDistance
+    ? values.v2
+    : Math.sqrt(Math.max(2 * availableDistance / (1 / values.a1 + 1 / values.a2), 0));
+  const t2 = peakSpeed / values.a1;
+  const s2 = peakSpeed * t2 / 2;
+  const t4 = peakSpeed / values.a2;
+  const s4 = peakSpeed * t4 / 2;
   const s3 = values.sh - (values.s1 + s2 + s4 + values.s5);
-  const t3 = s3 / values.v2;
+  const t3 = peakSpeed > 0 ? Math.max(s3, 0) / peakSpeed : 0;
   const t5 = values.s5 / values.v3;
   const times = [t1, t2, t3, t4, t5];
-  return { distances: [values.s1, s2, s3, s4, values.s5], times, tt: times.reduce((sum, time) => sum + time, 0) };
+  return { distances: [values.s1, s2, Math.max(s3, 0), s4, values.s5], times, peakSpeed, valid: availableDistance >= 0, tt: times.reduce((sum, time) => sum + time, 0) };
 }
 
 function setText(id, value) { document.getElementById(id).textContent = value; }
@@ -101,10 +106,10 @@ function getKinematics(values, result, elapsed) {
   time -= t1;
   if (time < t2) return { position: values.s1 + values.a1 * time ** 2 / 2, velocity: values.a1 * time, acceleration: values.a1 };
   time -= t2;
-  if (time < t3) return { position: values.s1 + result.distances[1] + values.v2 * time, velocity: values.v2, acceleration: 0 };
+  if (time < t3) return { position: values.s1 + result.distances[1] + result.peakSpeed * time, velocity: result.peakSpeed, acceleration: 0 };
   time -= t3;
   const decelerationStart = values.s1 + result.distances[1] + result.distances[2];
-  if (time < t4) return { position: decelerationStart + values.v2 * time - values.a2 * time ** 2 / 2, velocity: Math.max(values.v2 - values.a2 * time, 0), acceleration: -values.a2 };
+  if (time < t4) return { position: decelerationStart + result.peakSpeed * time - values.a2 * time ** 2 / 2, velocity: Math.max(result.peakSpeed - values.a2 * time, 0), acceleration: -values.a2 };
   time -= t4;
   const creepStart = decelerationStart + result.distances[3];
   if (time < t5) return { position: creepStart + values.v3 * time, velocity: values.v3, acceleration: 0 };
@@ -130,7 +135,7 @@ function drawSpeedChart(series = []) {
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const maxTime = Math.max(...series.map(({ result }) => result.tt), 1);
-  const maxSpeedRaw = Math.max(...series.map(({ values }) => values.v2), 1);
+  const maxSpeedRaw = Math.max(...series.map(({ result }) => result.peakSpeed), 1);
   const speedStep = maxSpeedRaw <= 500 ? 100 : maxSpeedRaw <= 2000 ? 500 : 1000;
   const maxSpeed = Math.ceil(maxSpeedRaw / speedStep) * speedStep;
   const x = (time) => margin.left + (time / maxTime) * plotWidth;
@@ -164,7 +169,7 @@ function drawSpeedChart(series = []) {
 
   series.forEach(({ values, result, color }) => {
     const [t1, t2, t3, t4, t5] = result.times;
-    const points = [[0, values.v1], [t1, values.v1], [t1 + t2, values.v2], [t1 + t2 + t3, values.v2], [t1 + t2 + t3 + t4, values.v3], [result.tt, values.v3]];
+    const points = [[0, values.v1], [t1, values.v1], [t1 + t2, result.peakSpeed], [t1 + t2 + t3, result.peakSpeed], [t1 + t2 + t3 + t4, values.v3], [result.tt, values.v3]];
     context.strokeStyle = color;
     context.lineWidth = width < 500 ? 2.5 : 3;
     context.lineJoin = 'round';
@@ -254,8 +259,8 @@ function calculate() {
   const upResult = calculateMotion(up);
   const unloadDownResult = calculateMotion(unloadDown);
   const unloadUpResult = calculateMotion(unloadUp);
-  if ([downResult, upResult, unloadDownResult, unloadUpResult].some((result) => result.distances[2] < 0)) {
-    warning.textContent = '昇降ストロークが不足しています。加減速・クリープ距離の合計がストロークを超えないようにしてください。';
+  if ([downResult, upResult, unloadDownResult, unloadUpResult].some((result) => !result.valid)) {
+    warning.textContent = '昇降ストロークが不足しています。上下端クリープ距離の合計がストロークを超えないようにしてください。';
     warning.hidden = false;
     renderEmpty();
     return;
@@ -344,7 +349,7 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const toggleButton = document.getElementById('simulationPause');
     toggleButton.disabled = false;
     toggleButton.textContent = 'スタート';
-    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, pauseCriterion: 'none', targetValue: null, maxPosition: values.sh, maxTime: result.tt, maxVelocity: values.v2, frame: null, handUnit, cargo, carriesLoad, startOffset };
+    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, pauseCriterion: 'none', targetValue: null, maxPosition: values.sh, maxTime: result.tt, maxVelocity: result.peakSpeed, frame: null, handUnit, cargo, carriesLoad, startOffset };
     updateAutoPauseControl();
     const renderFrame = (now) => {
       if (!simulationState || simulationState.paused) return;
