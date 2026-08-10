@@ -1,24 +1,26 @@
 const motionFields = [
-  { key: 'a1', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000 },
-  { key: 'a2', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500 },
-  { key: 'v1', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40 },
-  { key: 'v2', label: '昇降速度', symbol: 'V2', unit: 'mm/s', down: 1900, up: 1500 },
-  { key: 'v3', label: '下端クリープ速度', symbol: 'V3', unit: 'mm/s', down: 40, up: 40 },
-  { key: 's1', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19 },
-  { key: 's5', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12 },
-  { key: 'sh', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500 },
-  { key: 'tr', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55 }
+  { key: 'a1', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'a2', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'v1', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40, unloadDown: 20, unloadUp: 40 },
+  { key: 'v2', label: '昇降速度', symbol: 'V2', unit: 'mm/s', down: 1900, up: 1500, unloadDown: 1000, unloadUp: 1900 },
+  { key: 'v3', label: '下端クリープ速度', symbol: 'V3', unit: 'mm/s', down: 40, up: 40, unloadDown: 20, unloadUp: 40 },
+  { key: 's1', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19, unloadDown: 0, unloadUp: 0 },
+  { key: 's5', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12, unloadDown: 22, unloadUp: 0 },
+  { key: 'sh', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500, unloadDown: 2500, unloadUp: 2500 },
+  { key: 'tr', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
-const extras = { tg: 0.27, servo: 0.6 };
+const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
 const inputContainer = document.getElementById('motionInputs');
 motionFields.forEach((field) => {
   inputContainer.insertAdjacentHTML('beforeend', `
     <div class="motion-row">
-      <label for="down-${field.key}"><span>${field.label} <b>${field.symbol}</b></span><em>${field.unit}</em></label>
-      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ下降 ${field.label}" /><em>${field.unit}</em></span>
-      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ上昇 ${field.label}" /><em>${field.unit}</em></span>
+      <label for="down-${field.key}"><span>${field.label}</span><b>${field.symbol}</b></label><em class="unit">${field.unit}</em>
+      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ下降 ${field.label}" /></span>
+      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ上昇 ${field.label}" /></span>
+      <span class="field"><input id="unloadDown-${field.key}" type="number" min="0" step="any" value="${field.unloadDown}" aria-label="荷おろし下降 ${field.label}" /></span>
+      <span class="field"><input id="unloadUp-${field.key}" type="number" min="0" step="any" value="${field.unloadUp}" aria-label="荷おろし上昇 ${field.label}" /></span>
     </div>`);
 });
 
@@ -116,8 +118,9 @@ function drawSpeedChart(series = []) {
   });
 }
 function renderEmpty() {
-  ['totalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal'].forEach((id) => setText(id, '—'));
+  ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal'].forEach((id) => setText(id, '—'));
   setText('totalMilliseconds', '— ms');
+  setText('unloadTotalMilliseconds', '— ms');
   drawSpeedChart();
   ['down', 'up'].forEach((direction) => { for (let i = 1; i <= 5; i += 1) { setText(`${direction}-distance-${i}`, '—'); setText(`${direction}-time-${i}`, '—'); } });
 }
@@ -125,13 +128,18 @@ function renderEmpty() {
 function calculate() {
   const down = readDirection('down');
   const up = readDirection('up');
+  const unloadDown = readDirection('unloadDown');
+  const unloadUp = readDirection('unloadUp');
   const tg = Number(document.getElementById('tg').value);
   const servo = Number(document.getElementById('servo').value);
+  const unloadTg = Number(document.getElementById('unload-tg').value);
+  const unloadServo = Number(document.getElementById('unload-servo').value);
   const warning = document.getElementById('warning');
-  const values = [...Object.values(down), ...Object.values(up), tg, servo];
+  const directions = [down, up, unloadDown, unloadUp];
+  const values = [...directions.flatMap(Object.values), tg, servo, unloadTg, unloadServo];
   const positiveKeys = ['a1', 'a2', 'v1', 'v2', 'v3'];
   const invalid = values.some((value) => !Number.isFinite(value) || value < 0)
-    || positiveKeys.some((key) => down[key] === 0 || up[key] === 0);
+    || positiveKeys.some((key) => directions.some((direction) => direction[key] === 0));
 
   if (invalid) {
     warning.textContent = '速度・加速度には0より大きい値、その他の項目には0以上の値を入力してください。';
@@ -141,7 +149,9 @@ function calculate() {
   }
   const downResult = calculateMotion(down);
   const upResult = calculateMotion(up);
-  if (downResult.distances[2] < 0 || upResult.distances[2] < 0) {
+  const unloadDownResult = calculateMotion(unloadDown);
+  const unloadUpResult = calculateMotion(unloadUp);
+  if ([downResult, upResult, unloadDownResult, unloadUpResult].some((result) => result.distances[2] < 0)) {
     warning.textContent = '昇降ストロークが不足しています。加減速・クリープ距離の合計がストロークを超えないようにしてください。';
     warning.hidden = false;
     renderEmpty();
@@ -151,8 +161,12 @@ function calculate() {
 
   const actualTransfer = downResult.tt + down.tr + tg + upResult.tt + up.tr;
   const total = actualTransfer + servo;
+  const unloadActualTransfer = unloadDownResult.tt + unloadDown.tr + unloadTg + unloadUpResult.tt + unloadUp.tr;
+  const unloadTotal = unloadActualTransfer + unloadServo;
   setText('totalTime', format(total));
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
+  setText('unloadTotalTime', format(unloadTotal));
+  setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
   setText('transferTime', `${format(actualTransfer)} 秒`);
   setText('servoResult', `${format(servo)} 秒`);
   setText('downMotion', `${format(downResult.tt)} 秒`);
@@ -174,7 +188,9 @@ function calculate() {
 
 allInputs.forEach((input) => input.addEventListener('input', calculate));
 document.getElementById('resetButton').addEventListener('click', () => {
-  motionFields.forEach((field) => { document.getElementById(`down-${field.key}`).value = field.down; document.getElementById(`up-${field.key}`).value = field.up; });
+  motionFields.forEach((field) => {
+    ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { document.getElementById(`${direction}-${field.key}`).value = field[direction]; });
+  });
   Object.entries(extras).forEach(([id, value]) => { document.getElementById(id).value = value; });
   calculate();
 });

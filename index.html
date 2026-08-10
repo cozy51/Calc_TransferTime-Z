@@ -23,19 +23,24 @@
       <section class="panel input-panel" aria-labelledby="input-title">
         <div class="section-heading">
           <div><span class="step">01</span><h2 id="input-title">荷つかみ条件</h2></div>
-          <button id="resetButton" class="reset-button" type="button">荷つかみ初期値に戻す</button>
+          <button id="resetButton" class="reset-button" type="button">全サイクルを初期値に戻す</button>
         </div>
 
+        <div class="cycle-head" aria-hidden="true">
+          <span></span><span></span><strong>荷つかみサイクル</strong><strong>荷おろしサイクル</strong>
+        </div>
         <div class="direction-head" aria-hidden="true">
-          <span>項目・単位</span><strong>荷つかみ下降</strong><strong>荷つかみ上昇</strong>
+          <span>項目・記号</span><span>単位</span><strong>下降</strong><strong>上昇</strong><strong>下降</strong><strong>上昇</strong>
         </div>
         <div id="motionInputs" class="motion-inputs"></div>
 
         <div class="input-group extras-group">
           <h3>共通時間</h3>
           <div class="input-grid">
-            <label><span>グリップ時間 <b>TG</b></span><span class="field"><input id="tg" type="number" min="0" step="any" value="0.27" /><em>s</em></span></label>
-            <label><span>サーボ切替時間</span><span class="field"><input id="servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
+            <label><span>荷つかみグリップ時間 <b>TG</b></span><span class="field"><input id="tg" type="number" min="0" step="any" value="0.27" /><em>s</em></span></label>
+            <label><span>荷おろしグリップ時間 <b>TG</b></span><span class="field"><input id="unload-tg" type="number" min="0" step="any" value="0.21" /><em>s</em></span></label>
+            <label><span>荷つかみサーボ切替時間</span><span class="field"><input id="servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
+            <label><span>荷おろしサーボ切替時間</span><span class="field"><input id="unload-servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
           </div>
         </div>
       </section>
@@ -45,9 +50,14 @@
           <div class="section-heading"><div><span class="step">02</span><h2 id="result-title">計算結果</h2></div></div>
           <div id="warning" class="warning" role="alert" hidden></div>
           <div class="total-card">
-            <p>総移載時間（Stop − Start）</p>
+            <p>荷つかみ総移載時間（Stop − Start）</p>
             <div><strong id="totalTime">—</strong><span>秒</span></div>
             <small id="totalMilliseconds">— ms</small>
+          </div>
+          <div class="total-card unload-total-card">
+            <p>荷おろし総移載時間（Stop − Start）</p>
+            <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
+            <small id="unloadTotalMilliseconds">— ms</small>
           </div>
           <div class="summary-grid">
             <div><span>実移載時間</span><strong id="transferTime">— <small>秒</small></strong></div>
