@@ -20,8 +20,9 @@ const HAND_CENTER_TOP = 130.5;
 // track they would be 1–2 px and look like a dead stop. When emphasis is on,
 // each creep section is guaranteed this share of the track instead.
 const CREEP_MIN_SHARE = 0.14;
-// Upper bound for the slow-motion playback used to compensate that magnification.
-const MAX_SLOW_FACTOR = 12;
+// The magnification is cancelled out by playing the section back that many times
+// slower, so capping it also caps how long the whole playback takes.
+const MAX_CREEP_MAGNIFICATION = 5;
 
 const inputContainer = document.getElementById('motionInputs');
 const motionGroups = motionFields.reduce((groups, field) => {
@@ -144,11 +145,12 @@ function buildPositionScale(values, result, emphasise) {
   const raw = distances.map((distance) => (stroke > 0 ? distance / stroke : 0));
   let shares = raw;
   const creepIndexes = [0, 4].filter((index) => distances[index] > 0);
+  const creepTarget = (index) => Math.min(Math.max(raw[index], CREEP_MIN_SHARE), raw[index] * MAX_CREEP_MAGNIFICATION);
   if (emphasise && creepIndexes.length) {
-    const creepShare = creepIndexes.reduce((sum, index) => sum + Math.max(raw[index], CREEP_MIN_SHARE), 0);
+    const creepShare = creepIndexes.reduce((sum, index) => sum + creepTarget(index), 0);
     const otherShare = raw.reduce((sum, share, index) => sum + (creepIndexes.includes(index) ? 0 : share), 0);
     if (otherShare > 0 && creepShare < 1) {
-      shares = raw.map((share, index) => (creepIndexes.includes(index) ? Math.max(share, CREEP_MIN_SHARE) : share * (1 - creepShare) / otherShare));
+      shares = raw.map((share, index) => (creepIndexes.includes(index) ? creepTarget(index) : share * (1 - creepShare) / otherShare));
     }
   }
   const shareTotal = shares.reduce((sum, share) => sum + share, 0);
@@ -161,7 +163,7 @@ function buildPositionScale(values, result, emphasise) {
     // A magnified section would sweep more pixels in the same wall-clock time and
     // therefore look faster. Playing it back at raw/share of real time cancels the
     // magnification out, so the apparent speed matches the true-scale diagram.
-    const rate = raw[index] > 0 && share > 0 ? Math.max(raw[index] / share, 1 / MAX_SLOW_FACTOR) : 1;
+    const rate = raw[index] > 0 && share > 0 ? Math.max(raw[index] / share, 1 / MAX_CREEP_MAGNIFICATION) : 1;
     segments.push({ index, start: position, end: position + distance, offsetStart: offset, offsetEnd: offset + length, rate });
     position += distance;
     offset += length;
