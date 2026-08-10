@@ -95,6 +95,25 @@
           <div class="formula"><b>TM</b> = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）<br /><b>TC</b> = TM + <mark>TS</mark></div>
         </div>
 
+        <div class="panel simulation-panel" aria-labelledby="simulation-title">
+          <div class="simulation-heading">
+            <div><h2 id="simulation-title">動作シミュレーション</h2><p>昇降ユニットを基準にしたハンドユニットの昇降動作</p></div>
+            <strong id="simulationTime">動作時間 TT：— 秒</strong>
+          </div>
+          <div class="simulation-controls" aria-label="シミュレーションする動作を選択">
+            <button type="button" data-simulation="down">荷つかみ動作・下降時</button>
+            <button type="button" data-simulation="up">荷つかみ動作・上昇時</button>
+            <button type="button" data-simulation="unloadDown">荷おろし動作・下降時</button>
+            <button type="button" data-simulation="unloadUp">荷おろし動作・上昇時</button>
+          </div>
+          <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
+            <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
+            <div id="handUnit" class="hand-unit"><span>ハンドユニット</span><i></i><b></b></div>
+            <div class="simulation-scale"><span>上端</span><i></i><span>下端</span></div>
+          </div>
+          <p id="simulationStatus" class="simulation-status" aria-live="polite">動作を選択すると、実際の動作時間 TT に合わせて再生します。</p>
+        </div>
+
         <div class="panel chart-panel">
           <div class="chart-heading">
             <div><h2>速度線図</h2><p>縦軸：速度 ／ 横軸：時間</p></div>
