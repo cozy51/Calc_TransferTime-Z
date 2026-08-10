@@ -39,7 +39,7 @@ segmentNames.forEach((name, index) => {
   detailRows.insertAdjacentHTML('beforeend', `<tr><td><span class="tag">T${number}</span></td><td>${name}</td>${['down', 'up', 'unloadDown', 'unloadUp'].map((direction) => `<td id="${direction}-distance-${number}">—</td><td id="${direction}-time-${number}">—</td>`).join('')}</tr>`);
 });
 
-const allInputs = [...document.querySelectorAll('input')];
+const allInputs = [...document.querySelectorAll('.input-panel input')];
 let simulationResults = null;
 let simulationState = null;
 const format = (value, digits = 2) => Number.isFinite(value)
@@ -74,6 +74,7 @@ function cancelSimulation() {
   if (simulationState?.frame) cancelAnimationFrame(simulationState.frame);
   simulationState = null;
   document.getElementById('handUnit').style.transform = 'translate(-50%, 0)';
+  document.getElementById('simulationCargo').style.transform = 'translate(-50%, 0)';
   const pauseButton = document.getElementById('simulationPause');
   pauseButton.disabled = true;
   pauseButton.textContent = 'スタート';
@@ -310,16 +311,22 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     document.querySelectorAll('[data-simulation]').forEach((item) => item.classList.toggle('active', item === button));
     cancelSimulation();
     const isUp = direction === 'up' || direction === 'unloadUp';
+    const carriesLoad = direction === 'up' || direction === 'unloadDown';
     const handUnit = document.getElementById('handUnit');
+    const cargo = document.getElementById('simulationCargo');
+    const pausePosition = document.getElementById('simulationPausePosition');
+    pausePosition.max = values.sh;
     const label = button.textContent;
     setText('simulationTime', `動作時間 TT：${format(result.tt)} 秒`);
     setText('simulationStatus', `${label}を選択しました。「スタート」で再生します。`);
     setSimulationTelemetry();
-    handUnit.style.transform = `translate(-50%, ${isUp ? 345 : 0}px)`;
+    const startOffset = isUp ? 345 : 0;
+    handUnit.style.transform = `translate(-50%, ${startOffset}px)`;
+    cargo.style.transform = `translate(-50%, ${carriesLoad ? startOffset - 345 : 0}px)`;
     const toggleButton = document.getElementById('simulationPause');
     toggleButton.disabled = false;
     toggleButton.textContent = 'スタート';
-    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, frame: null, handUnit, startOffset: isUp ? 345 : 0 };
+    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, targetPosition: null, maxPosition: values.sh, frame: null, handUnit, cargo, carriesLoad, startOffset };
     const renderFrame = (now) => {
       if (!simulationState || simulationState.paused) return;
       simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
@@ -327,8 +334,16 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
       const progress = result.tt > 0 ? simulationState.elapsed / result.tt : 1;
       const offset = (isUp ? 1 - progress : progress) * 345;
       handUnit.style.transform = `translate(-50%, ${offset}px)`;
+      cargo.style.transform = `translate(-50%, ${carriesLoad ? offset - 345 : 0}px)`;
       const current = getKinematics(values, result, simulationState.elapsed);
       setSimulationTelemetry(simulationState.elapsed, current.position, current.velocity, current.acceleration);
+      if (simulationState.targetPosition !== null && !simulationState.autoPaused && current.position >= simulationState.targetPosition) {
+        simulationState.paused = true;
+        simulationState.autoPaused = true;
+        toggleButton.textContent = '再開';
+        setText('simulationStatus', `指定位置 ${format(simulationState.targetPosition)} mm に到達したため、自動で一時停止しました。`);
+        return;
+      }
       if (simulationState.elapsed >= result.tt) {
         setText('simulationStatus', `${label}が完了しました。`);
         simulationState.paused = true;
@@ -348,9 +363,18 @@ document.getElementById('simulationPause').addEventListener('click', (event) => 
     simulationState.elapsed = 0;
     simulationState.finished = false;
     simulationState.handUnit.style.transform = `translate(-50%, ${simulationState.startOffset}px)`;
+    simulationState.cargo.style.transform = `translate(-50%, ${simulationState.carriesLoad ? simulationState.startOffset - 345 : 0}px)`;
     setSimulationTelemetry();
   }
   if (!simulationState.started) {
+    const rawTarget = document.getElementById('simulationPausePosition').value.trim();
+    const targetPosition = rawTarget === '' ? null : Number(rawTarget);
+    if (targetPosition !== null && (!Number.isFinite(targetPosition) || targetPosition < 0 || targetPosition > simulationState.maxPosition)) {
+      setText('simulationStatus', `自動一時停止位置は0～${format(simulationState.maxPosition)} mmで指定してください。`);
+      return;
+    }
+    simulationState.targetPosition = targetPosition;
+    simulationState.autoPaused = false;
     simulationState.started = true;
     simulationState.paused = false;
   } else {
