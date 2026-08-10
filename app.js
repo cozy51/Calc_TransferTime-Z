@@ -20,6 +20,8 @@ const HAND_CENTER_TOP = 130.5;
 // track they would be 1–2 px and look like a dead stop. When emphasis is on,
 // each creep section is guaranteed this share of the track instead.
 const CREEP_MIN_SHARE = 0.14;
+// Upper bound for the slow-motion playback used to compensate that magnification.
+const MAX_SLOW_FACTOR = 12;
 
 const inputContainer = document.getElementById('motionInputs');
 const motionGroups = motionFields.reduce((groups, field) => {
@@ -95,9 +97,7 @@ function cancelSimulation() {
   handUnit.classList.remove('creeping');
   document.getElementById('simulationCargo').style.transform = 'translate(-50%, 0)';
   renderCreepZones(null);
-  const phase = document.getElementById('simulationPhase');
-  phase.textContent = '待機中';
-  phase.classList.remove('creep');
+  setPhaseBadge('待機中');
   const pauseButton = document.getElementById('simulationPause');
   pauseButton.disabled = true;
   pauseButton.textContent = 'スタート';
@@ -156,8 +156,13 @@ function buildPositionScale(values, result, emphasise) {
   let position = 0;
   let offset = 0;
   distances.forEach((distance, index) => {
-    const length = (shareTotal > 0 ? shares[index] / shareTotal : 0) * TRACK_LENGTH;
-    segments.push({ index, start: position, end: position + distance, offsetStart: offset, offsetEnd: offset + length });
+    const share = shareTotal > 0 ? shares[index] / shareTotal : 0;
+    const length = share * TRACK_LENGTH;
+    // A magnified section would sweep more pixels in the same wall-clock time and
+    // therefore look faster. Playing it back at raw/share of real time cancels the
+    // magnification out, so the apparent speed matches the true-scale diagram.
+    const rate = raw[index] > 0 && share > 0 ? Math.max(raw[index] / share, 1 / MAX_SLOW_FACTOR) : 1;
+    segments.push({ index, start: position, end: position + distance, offsetStart: offset, offsetEnd: offset + length, rate });
     position += distance;
     offset += length;
   });
@@ -190,6 +195,17 @@ function renderCreepZones(state) {
     zone.firstElementChild.textContent = `${segmentNames[index]}（T${index + 1}）${format(segment.end - segment.start, 1)} mm`;
   });
 }
+function setPhaseBadge(label, rateLabel = '') {
+  const phase = document.getElementById('simulationPhase');
+  phase.firstElementChild.textContent = label;
+  phase.lastElementChild.textContent = rateLabel;
+  phase.classList.remove('creep');
+}
+function playbackRateLabel(rate) {
+  if (rate < 0.995) return `再生 1/${format(1 / rate, 1)} 速`;
+  if (rate > 1.005) return `再生 ${format(rate, 2)} 倍速`;
+  return '再生 等倍';
+}
 function renderSimulationFrame(state, kinematics) {
   const offset = toStageOffset(state, kinematics.position);
   state.handUnit.style.transform = `translate(-50%, ${offset}px)`;
@@ -198,7 +214,8 @@ function renderSimulationFrame(state, kinematics) {
   const creeping = kinematics.segment === 0 || kinematics.segment === 4;
   state.handUnit.classList.toggle('creeping', creeping);
   const phase = document.getElementById('simulationPhase');
-  phase.textContent = `区間 T${kinematics.segment + 1}：${segmentNames[kinematics.segment]}`;
+  phase.firstElementChild.textContent = `区間 T${kinematics.segment + 1}：${segmentNames[kinematics.segment]}`;
+  phase.lastElementChild.textContent = playbackRateLabel(state.scale.segments[kinematics.segment]?.rate ?? 1);
   phase.classList.toggle('creep', creeping);
   document.getElementById('creepZoneStart').classList.toggle('active', kinematics.segment === 0);
   document.getElementById('creepZoneEnd').classList.toggle('active', kinematics.segment === 4);
@@ -442,7 +459,10 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     updateAutoPauseControl();
     const renderFrame = (now) => {
       if (!simulationState || simulationState.paused) return;
-      simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
+      // The playback rate slows down inside magnified sections, so the elapsed
+      // time shown stays the real one while the diagram keeps its true tempo.
+      const rate = simulationState.scale.segments[getKinematics(values, result, simulationState.elapsed).segment]?.rate ?? 1;
+      simulationState.elapsed = Math.min(simulationState.elapsed + rate * (now - simulationState.lastTime) / 1000, result.tt);
       simulationState.lastTime = now;
       const current = getKinematics(values, result, simulationState.elapsed);
       // Convert the calculated travel distance—not elapsed-time progress—to the
@@ -466,9 +486,7 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
         simulationState.finished = true;
         handUnit.classList.remove('creeping');
         document.querySelectorAll('.creep-zone').forEach((zone) => zone.classList.remove('active'));
-        const phase = document.getElementById('simulationPhase');
-        phase.textContent = '動作完了';
-        phase.classList.remove('creep');
+        setPhaseBadge('動作完了');
         toggleButton.textContent = 'スタート';
         return;
       }
