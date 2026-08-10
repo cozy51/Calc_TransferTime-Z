@@ -76,10 +76,10 @@
             <p class="calculation-order"><b>計算順</b> 左から右、上から下へ計算します：T1 → T2 → S2 → T4 → S4 → S3 → T3 → T5</p>
             <div class="formula-grid">
               <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
-              <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
-              <div><b>S2</b><code>V2 × T2 ÷ 2</code><span>昇降加速距離</span></div>
-              <div><b>T4</b><code>V2 ÷ A2</code><span>減速時間</span></div>
-              <div><b>S4</b><code>V2 × T4 ÷ 2</code><span>昇降減速距離</span></div>
+              <div><b>T2</b><code>(V2 − V1) ÷ A1</code><span>加速時間（V1から加速）</span></div>
+              <div><b>S2</b><code>(V1 + V2) × T2 ÷ 2</code><span>昇降加速距離</span></div>
+              <div><b>T4</b><code>(V2 − V3) ÷ A2</code><span>減速時間（V3まで減速）</span></div>
+              <div><b>S4</b><code>(V2 + V3) × T4 ÷ 2</code><span>昇降減速距離</span></div>
               <div><b>S3</b><code>SH − (S1 + S2 + S4 + S5)</code><span>最高速昇降距離</span></div>
               <div><b>T3</b><code>S3 ÷ V2</code><span>最高速昇降時間</span></div>
               <div><b>T5</b><code>S5 ÷ V3</code><span>下端クリープ時間</span></div>
@@ -161,11 +161,18 @@
             <small>位置・時間・速度のいずれか1つを選択し、指定値へ到達すると自動で一時停止します。</small>
           </div>
           <button id="simulationPause" class="simulation-pause" type="button" disabled>スタート</button>
+          <div class="stage-options">
+            <label for="creepEmphasis"><input id="creepEmphasis" type="checkbox" checked /><span>クリープ区間を拡大表示</span></label>
+            <small>クリープ距離はストロークに対して極端に短いため、既定では図中のクリープ区間を拡大し、低速で動く様子が見えるようにします。経過時間・移動位置・速度は実際の値のままです。</small>
+          </div>
           <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
+            <div id="creepZoneStart" class="creep-zone" hidden><span></span></div>
+            <div id="creepZoneEnd" class="creep-zone" hidden><span></span></div>
             <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
             <div id="handUnit" class="hand-unit"><span>ハンドユニット</span></div>
             <div id="simulationCargo" class="simulation-cargo" aria-label="搬送する荷物"><span>荷物</span></div>
             <div class="simulation-scale"><span>上端</span><i></i><span>下端</span></div>
+            <div id="simulationPhase" class="stage-phase" aria-live="polite">待機中</div>
           </div>
           <p id="simulationStatus" class="simulation-status" aria-live="polite">動作を選択すると、実際の動作時間 TT に合わせて再生します。</p>
         </div>
