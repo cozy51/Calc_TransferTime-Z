@@ -73,6 +73,12 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .total-card strong { font-size:48px; line-height:1; letter-spacing:.02em; }
 .total-card div span { margin-left:7px; font-size:16px; }
 .total-card small { display:block; margin-top:9px; color:#c9e5ff; font-size:12px; }
+.total-card .specification-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:15px; padding-top:13px; border-top:1px solid rgba(255,255,255,.28); }
+.total-card .specification-row>span { margin:0; font-size:13px; font-weight:700; }
+.judgement { min-width:72px; padding:5px 12px; border-radius:999px; font-size:15px; font-weight:850; font-style:normal; }
+.judgement.passed { color:#087443; background:#dcfae6; }
+.judgement.failed { color:white; background:#d92d20; }
+.judgement.pending { color:#52667c; background:#eef2f6; }
 .unload-total-card { margin-top:12px; background:linear-gradient(135deg,#087565,#159b84); box-shadow:0 7px 16px rgba(20,133,114,.18); }
 .total-equations { margin-top:14px; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
 .total-equations p { display:grid; grid-template-columns:90px 1fr; gap:5px 12px; margin:0; padding:12px 14px; border-bottom:1px solid var(--line); }
@@ -126,6 +132,12 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .lift-unit span,.hand-unit span { position:absolute; inset:0; display:grid; place-content:center; font-size:12px; font-weight:800; }
 .lift-unit i { position:absolute; top:66px; left:67px; width:8px; height:440px; background:#8da0b4; box-shadow:inset 0 0 0 2px #6b7f94; }
 .hand-unit { position:absolute; z-index:2; top:103px; left:50%; width:92px; height:55px; transform:translate(-50%,0); color:#713c05; background:#ffc36b; border:3px solid #d98316; border-radius:5px; box-shadow:0 5px 10px rgba(122,70,10,.18); }
+.support-platform { position:absolute; z-index:1; top:510px; left:50%; width:160px; height:45px; transform:translateX(-50%); }
+.support-platform span { position:absolute; top:0; left:0; width:100%; height:10px; background:#647b91; border:2px solid #40576d; border-radius:4px; box-shadow:0 3px 7px rgba(29,44,63,.16); }
+.support-platform i,.support-platform b { position:absolute; top:10px; width:12px; height:30px; background:#647b91; border:2px solid #40576d; }
+.support-platform i { left:24px; }
+.support-platform b { right:24px; }
+.support-platform::after { content:""; position:absolute; left:13px; right:13px; bottom:0; height:7px; background:#40576d; border-radius:3px 3px 0 0; }
 .simulation-scale { position:absolute; top:43px; right:25px; height:480px; display:flex; flex-direction:column; align-items:center; justify-content:space-between; color:#718196; font-size:11px; font-weight:700; }
 .simulation-scale i { position:absolute; top:20px; bottom:20px; width:2px; background:#b8c6d5; }
 .simulation-status { margin:10px 0 0; color:#52667c; text-align:center; font-size:12px; }

@@ -10,6 +10,7 @@ const motionFields = [
   { key: 'tr', group: 'delay', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
 const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
+const cycleSpecifications = { pickup: 7.7, unload: 7.6 };
 const chartSeriesNames = ['荷つかみ・下降時', '荷つかみ・上昇時', '荷おろし・下降時', '荷おろし・上昇時'];
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
@@ -63,13 +64,19 @@ function calculateMotion(values) {
 }
 
 function setText(id, value) { document.getElementById(id).textContent = value; }
+function setJudgement(id, total, specification) {
+  const element = document.getElementById(id);
+  const passed = Number.isFinite(total) && total <= specification;
+  element.textContent = passed ? '合格' : '不合格';
+  element.className = `judgement ${passed ? 'passed' : 'failed'}`;
+}
 function cancelSimulation() {
   if (simulationState?.frame) cancelAnimationFrame(simulationState.frame);
   simulationState = null;
   document.getElementById('handUnit').style.transform = 'translate(-50%, 0)';
   const pauseButton = document.getElementById('simulationPause');
   pauseButton.disabled = true;
-  pauseButton.textContent = '一時停止';
+  pauseButton.textContent = 'スタート';
 }
 function setSimulationTelemetry(elapsed = 0, position = 0, velocity = 0, acceleration = 0) {
   setText('simulationElapsed', `${format(elapsed)} s`);
@@ -198,6 +205,11 @@ function renderEmpty() {
   ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'unloadTransferTime', 'unloadServoResult', 'unloadDownMotion', 'unloadDownDelay', 'unloadUpMotion', 'unloadUpDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
   setText('totalMilliseconds', '— ms');
   setText('unloadTotalMilliseconds', '— ms');
+  ['pickupJudgement', 'unloadJudgement'].forEach((id) => {
+    const element = document.getElementById(id);
+    element.textContent = '判定不可';
+    element.className = 'judgement pending';
+  });
   setText('pickupTotalFormula', '—');
   setText('unloadTotalFormula', '—');
   drawSpeedChart();
@@ -257,6 +269,8 @@ function calculate() {
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
   setText('unloadTotalTime', format(unloadTotal));
   setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
+  setJudgement('pickupJudgement', total, cycleSpecifications.pickup);
+  setJudgement('unloadJudgement', unloadTotal, cycleSpecifications.unload);
   setTotalFormula('pickupTotalFormula', down.tr, downResult.tt, tg, up.tr, upResult.tt, actualTransfer, servo, total);
   setTotalFormula('unloadTotalFormula', unloadDown.tr, unloadDownResult.tt, unloadTg, unloadUp.tr, unloadUpResult.tt, unloadActualTransfer, unloadServo, unloadTotal);
   setText('transferTime', `${format(actualTransfer)} 秒`);
@@ -299,9 +313,13 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const handUnit = document.getElementById('handUnit');
     const label = button.textContent;
     setText('simulationTime', `動作時間 TT：${format(result.tt)} 秒`);
-    setText('simulationStatus', `${label}を再生中です。`);
-    document.getElementById('simulationPause').disabled = false;
-    simulationState = { elapsed: 0, lastTime: performance.now(), paused: false, frame: null };
+    setText('simulationStatus', `${label}を選択しました。「スタート」で再生します。`);
+    setSimulationTelemetry();
+    handUnit.style.transform = `translate(-50%, ${isUp ? 345 : 0}px)`;
+    const toggleButton = document.getElementById('simulationPause');
+    toggleButton.disabled = false;
+    toggleButton.textContent = 'スタート';
+    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, frame: null, handUnit, startOffset: isUp ? 345 : 0 };
     const renderFrame = (now) => {
       if (!simulationState || simulationState.paused) return;
       simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
@@ -313,26 +331,38 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
       setSimulationTelemetry(simulationState.elapsed, current.position, current.velocity, current.acceleration);
       if (simulationState.elapsed >= result.tt) {
         setText('simulationStatus', `${label}が完了しました。`);
-        document.getElementById('simulationPause').disabled = true;
-        simulationState = null;
+        simulationState.paused = true;
+        simulationState.started = false;
+        simulationState.finished = true;
+        toggleButton.textContent = 'スタート';
         return;
       }
       simulationState.frame = requestAnimationFrame(renderFrame);
     };
     simulationState.renderFrame = renderFrame;
-    simulationState.frame = requestAnimationFrame(renderFrame);
   });
 });
 document.getElementById('simulationPause').addEventListener('click', (event) => {
   if (!simulationState) return;
-  simulationState.paused = !simulationState.paused;
+  if (simulationState.finished) {
+    simulationState.elapsed = 0;
+    simulationState.finished = false;
+    simulationState.handUnit.style.transform = `translate(-50%, ${simulationState.startOffset}px)`;
+    setSimulationTelemetry();
+  }
+  if (!simulationState.started) {
+    simulationState.started = true;
+    simulationState.paused = false;
+  } else {
+    simulationState.paused = !simulationState.paused;
+  }
   event.currentTarget.textContent = simulationState.paused ? '再開' : '一時停止';
   if (simulationState.paused) {
     if (simulationState.frame) cancelAnimationFrame(simulationState.frame);
     setText('simulationStatus', '一時停止中です。');
   } else {
     simulationState.lastTime = performance.now();
-    setText('simulationStatus', 'シミュレーションを再開しました。');
+    setText('simulationStatus', simulationState.elapsed === 0 ? 'シミュレーションを開始しました。' : 'シミュレーションを再開しました。');
     simulationState.frame = requestAnimationFrame(simulationState.renderFrame);
   }
 });

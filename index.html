@@ -92,11 +92,13 @@
             <p>荷つかみ動作・総移載時間 <b>TC</b>（Stop − Start）</p>
             <div><strong id="totalTime">—</strong><span>秒</span></div>
             <small id="totalMilliseconds">— ms</small>
+            <div class="specification-row"><span>仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
           </div>
           <div class="total-card unload-total-card">
             <p>荷おろし動作・総移載時間 <b>TC</b>（Stop − Start）</p>
             <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
             <small id="unloadTotalMilliseconds">— ms</small>
+            <div class="specification-row"><span>仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
           </div>
           <div class="total-equations">
             <p><b>荷つかみ動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="pickupTotalFormula">—</code></p>
@@ -144,10 +146,11 @@
             <div><span>速度</span><strong id="simulationVelocity">0.00 mm/s</strong></div>
             <div><span>加速度</span><strong id="simulationAcceleration">0.00 mm/s²</strong></div>
           </div>
-          <button id="simulationPause" class="simulation-pause" type="button" disabled>一時停止</button>
+          <button id="simulationPause" class="simulation-pause" type="button" disabled>スタート</button>
           <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
             <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
             <div id="handUnit" class="hand-unit"><span>ハンドユニット</span></div>
+            <div class="support-platform" aria-label="下端の受け台"><span></span><i></i><b></b></div>
             <div class="simulation-scale"><span>上端</span><i></i><span>下端</span></div>
           </div>
           <p id="simulationStatus" class="simulation-status" aria-live="polite">動作を選択すると、実際の動作時間 TT に合わせて再生します。</p>
