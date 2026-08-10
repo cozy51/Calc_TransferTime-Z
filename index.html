@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TOOL移載の荷つかみ動作・荷おろし動作のサイクルタイムを自動計算します。" />
-    <title>TransferCycleTime | TOOL移載時間計算</title>
+    <title>TransferTime-Z | TOOL移載時間計算</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -13,7 +13,7 @@
         <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
         <div>
           <p class="eyebrow">CYCLE TIME CALCULATOR</p>
-          <h1>TransferCycleTime</h1>
+          <h1>TransferTime-Z</h1>
           <p class="subtitle">TOOL移載・荷つかみ動作／荷おろし動作サイクルタイム計算</p>
         </div>
       </div>
@@ -33,6 +33,11 @@
         <div class="direction-head" aria-hidden="true">
           <span>項目・記号</span><span>単位</span><strong>下降時</strong><strong>上昇時</strong><strong>下降時</strong><strong>上昇時</strong>
         </div>
+        <div class="shared-stroke-row">
+          <label for="shared-sh"><span>昇降ストローク</span><b>SH</b></label><em>mm</em>
+          <span class="field"><input id="shared-sh" type="number" min="0" step="any" value="2500" aria-label="全動作共通 昇降ストローク" /></span>
+          <strong>全動作共通</strong>
+        </div>
         <div id="motionInputs" class="motion-inputs"></div>
 
         <div class="input-group extras-group">
@@ -48,6 +53,11 @@
               <span class="extras-name">サーボ切替時間 <b>TS</b></span><em>s</em>
               <span class="field"><input id="servo" aria-label="荷つかみ動作・サーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
               <span class="field"><input id="unload-servo" aria-label="荷おろし動作・サーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
+            </div>
+            <div class="extras-row specification-input-row">
+              <span class="extras-name">仕様値 <b>TC</b></span><em>s</em>
+              <span class="field"><input id="pickup-spec" aria-label="荷つかみ動作・仕様値" type="number" min="0" step="any" value="7.7" /></span>
+              <span class="field"><input id="unload-spec" aria-label="荷おろし動作・仕様値" type="number" min="0" step="any" value="7.6" /></span>
             </div>
           </div>
         </div>
@@ -92,13 +102,13 @@
             <p>荷つかみ動作・総移載時間 <b>TC</b>（Stop − Start）</p>
             <div><strong id="totalTime">—</strong><span>秒</span></div>
             <small id="totalMilliseconds">— ms</small>
-            <div class="specification-row"><span>仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
+            <div class="specification-row"><span id="pickupSpecificationDisplay">仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
           </div>
           <div class="total-card unload-total-card">
             <p>荷おろし動作・総移載時間 <b>TC</b>（Stop − Start）</p>
             <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
             <small id="unloadTotalMilliseconds">— ms</small>
-            <div class="specification-row"><span>仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
+            <div class="specification-row"><span id="unloadSpecificationDisplay">仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
           </div>
           <div class="total-equations">
             <p><b>荷つかみ動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="pickupTotalFormula">—</code></p>
@@ -135,10 +145,10 @@
             <strong id="simulationTime">動作時間 TT：— 秒</strong>
           </div>
           <div class="simulation-controls" aria-label="シミュレーションする動作を選択">
-            <button type="button" data-simulation="down">荷つかみ動作・下降時</button>
-            <button type="button" data-simulation="up">荷つかみ動作・上昇時</button>
-            <button type="button" data-simulation="unloadDown">荷おろし動作・下降時</button>
-            <button type="button" data-simulation="unloadUp">荷おろし動作・上昇時</button>
+            <button class="active" type="button" data-simulation="down" aria-pressed="true">荷つかみ動作・下降時</button>
+            <button type="button" data-simulation="up" aria-pressed="false">荷つかみ動作・上昇時</button>
+            <button type="button" data-simulation="unloadDown" aria-pressed="false">荷おろし動作・下降時</button>
+            <button type="button" data-simulation="unloadUp" aria-pressed="false">荷おろし動作・上昇時</button>
           </div>
           <div class="simulation-telemetry" aria-label="シミュレーション計測値">
             <div><span>経過時間</span><strong id="simulationElapsed">0.00 s</strong></div>
@@ -190,7 +200,7 @@
 
       </section>
     </main>
-    <footer>TransferCycleTime <span>•</span> TOOL Transfer Engineering Calculator</footer>
+    <footer>TransferTime-Z <span>•</span> TOOL Transfer Engineering Calculator</footer>
     <script src="app.js"></script>
   </body>
 </html>

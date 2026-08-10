@@ -1,5 +1,4 @@
 const motionFields = [
-  { key: 'sh', group: 'distance', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500, unloadDown: 2500, unloadUp: 2500 },
   { key: 's1', group: 'distance', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19, unloadDown: 0, unloadUp: 0 },
   { key: 's5', group: 'distance', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12, unloadDown: 22, unloadUp: 0 },
   { key: 'v1', group: 'speed', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40, unloadDown: 20, unloadUp: 40 },
@@ -9,8 +8,8 @@ const motionFields = [
   { key: 'a2', group: 'acceleration', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500, unloadDown: 2500, unloadUp: 3000 },
   { key: 'tr', group: 'delay', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
-const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
-const cycleSpecifications = { pickup: 7.7, unload: 7.6 };
+const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6, 'pickup-spec': 7.7, 'unload-spec': 7.6 };
+const sharedDefaults = { sh: 2500 };
 const chartSeriesNames = ['荷つかみ・下降時', '荷つかみ・上昇時', '荷おろし・下降時', '荷おろし・上昇時'];
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
@@ -47,7 +46,7 @@ const format = (value, digits = 2) => Number.isFinite(value)
   : '—';
 
 function readDirection(direction) {
-  return Object.fromEntries(motionFields.map(({ key }) => [key, Number(document.getElementById(`${direction}-${key}`).value)]));
+  return { ...Object.fromEntries(motionFields.map(({ key }) => [key, Number(document.getElementById(`${direction}-${key}`).value)])), sh: Number(document.getElementById('shared-sh').value) };
 }
 
 function calculateMotion(values) {
@@ -236,9 +235,11 @@ function calculate() {
   const servo = Number(document.getElementById('servo').value);
   const unloadTg = Number(document.getElementById('unload-tg').value);
   const unloadServo = Number(document.getElementById('unload-servo').value);
+  const pickupSpecification = Number(document.getElementById('pickup-spec').value);
+  const unloadSpecification = Number(document.getElementById('unload-spec').value);
   const warning = document.getElementById('warning');
   const directions = [down, up, unloadDown, unloadUp];
-  const values = [...directions.flatMap(Object.values), tg, servo, unloadTg, unloadServo];
+  const values = [...directions.flatMap(Object.values), tg, servo, unloadTg, unloadServo, pickupSpecification, unloadSpecification];
   const positiveKeys = ['a1', 'a2', 'v1', 'v2', 'v3'];
   const invalid = values.some((value) => !Number.isFinite(value) || value < 0)
     || positiveKeys.some((key) => directions.some((direction) => direction[key] === 0));
@@ -262,7 +263,10 @@ function calculate() {
   warning.hidden = true;
   cancelSimulation();
   setSimulationTelemetry();
-  document.querySelectorAll('[data-simulation]').forEach((button) => button.classList.remove('active'));
+  document.querySelectorAll('[data-simulation]').forEach((button) => {
+    button.classList.remove('active');
+    button.setAttribute('aria-pressed', 'false');
+  });
   setText('simulationTime', '動作時間 TT：— 秒');
   setText('simulationStatus', '動作を選択すると、実際の動作時間 TT に合わせて再生します。');
   simulationResults = {
@@ -280,8 +284,10 @@ function calculate() {
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
   setText('unloadTotalTime', format(unloadTotal));
   setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
-  setJudgement('pickupJudgement', total, cycleSpecifications.pickup);
-  setJudgement('unloadJudgement', unloadTotal, cycleSpecifications.unload);
+  setText('pickupSpecificationDisplay', `仕様値 ${format(pickupSpecification, 1)}秒以下`);
+  setText('unloadSpecificationDisplay', `仕様値 ${format(unloadSpecification, 1)}秒以下`);
+  setJudgement('pickupJudgement', total, pickupSpecification);
+  setJudgement('unloadJudgement', unloadTotal, unloadSpecification);
   setTotalFormula('pickupTotalFormula', down.tr, downResult.tt, tg, up.tr, upResult.tt, actualTransfer, servo, total);
   setTotalFormula('unloadTotalFormula', unloadDown.tr, unloadDownResult.tt, unloadTg, unloadUp.tr, unloadUpResult.tt, unloadActualTransfer, unloadServo, unloadTotal);
   setText('transferTime', `${format(actualTransfer)} 秒`);
@@ -318,7 +324,11 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const simulation = simulationResults?.[direction];
     if (!simulation) return;
     const { result, values } = simulation;
-    document.querySelectorAll('[data-simulation]').forEach((item) => item.classList.toggle('active', item === button));
+    document.querySelectorAll('[data-simulation]').forEach((item) => {
+      const selected = item === button;
+      item.classList.toggle('active', selected);
+      item.setAttribute('aria-pressed', String(selected));
+    });
     cancelSimulation();
     const isUp = direction === 'up' || direction === 'unloadUp';
     const carriesLoad = direction === 'up' || direction === 'unloadDown';
@@ -413,9 +423,12 @@ document.getElementById('resetButton').addEventListener('click', () => {
     ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { document.getElementById(`${direction}-${field.key}`).value = field[direction]; });
   });
   Object.entries(extras).forEach(([id, value]) => { document.getElementById(id).value = value; });
+  document.getElementById('shared-sh').value = sharedDefaults.sh;
   calculate();
+  document.querySelector('[data-simulation="down"]').click();
 });
 calculate();
+document.querySelector('[data-simulation="down"]').click();
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
