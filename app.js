@@ -1,34 +1,46 @@
 const motionFields = [
-  { key: 'a1', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000 },
-  { key: 'a2', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500 },
-  { key: 'v1', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40 },
-  { key: 'v2', label: '昇降速度', symbol: 'V2', unit: 'mm/s', down: 1900, up: 1500 },
-  { key: 'v3', label: '下端クリープ速度', symbol: 'V3', unit: 'mm/s', down: 40, up: 40 },
-  { key: 's1', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19 },
-  { key: 's5', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12 },
-  { key: 'sh', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500 },
-  { key: 'tr', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55 }
+  { key: 'sh', group: 'distance', label: '昇降ストローク', symbol: 'SH', unit: 'mm', down: 2500, up: 2500, unloadDown: 2500, unloadUp: 2500 },
+  { key: 's1', group: 'distance', label: '上端クリープ距離', symbol: 'S1', unit: 'mm', down: 0, up: 19, unloadDown: 0, unloadUp: 0 },
+  { key: 's5', group: 'distance', label: '下端クリープ距離', symbol: 'S5', unit: 'mm', down: 21, up: 12, unloadDown: 22, unloadUp: 0 },
+  { key: 'v1', group: 'speed', label: '上端クリープ速度', symbol: 'V1', unit: 'mm/s', down: 20, up: 40, unloadDown: 20, unloadUp: 40 },
+  { key: 'v2', group: 'speed', label: '昇降速度', symbol: 'V2', unit: 'mm/s', down: 1900, up: 1500, unloadDown: 1000, unloadUp: 1900 },
+  { key: 'v3', group: 'speed', label: '下端クリープ速度', symbol: 'V3', unit: 'mm/s', down: 40, up: 40, unloadDown: 20, unloadUp: 40 },
+  { key: 'a1', group: 'acceleration', label: '昇降加速度', symbol: 'A1', unit: 'mm/s²', down: 3000, up: 2000, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'a2', group: 'acceleration', label: '昇降減速度', symbol: 'A2', unit: 'mm/s²', down: 3000, up: 2500, unloadDown: 2500, unloadUp: 3000 },
+  { key: 'tr', group: 'delay', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
-const extras = { tg: 0.27, servo: 0.6 };
+const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
+const chartSeriesNames = ['荷つかみ・下降時', '荷つかみ・上昇時', '荷おろし・下降時', '荷おろし・上昇時'];
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
 const inputContainer = document.getElementById('motionInputs');
-motionFields.forEach((field) => {
-  inputContainer.insertAdjacentHTML('beforeend', `
+const motionGroups = motionFields.reduce((groups, field) => {
+  if (!groups.has(field.group)) groups.set(field.group, []);
+  groups.get(field.group).push(field);
+  return groups;
+}, new Map());
+motionGroups.forEach((fields) => {
+  const rows = fields.map((field, index) => `
     <div class="motion-row">
-      <label for="down-${field.key}"><span>${field.label} <b>${field.symbol}</b></span><em>${field.unit}</em></label>
-      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ下降 ${field.label}" /><em>${field.unit}</em></span>
-      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ上昇 ${field.label}" /><em>${field.unit}</em></span>
-    </div>`);
+      <label for="down-${field.key}"><span>${field.label}</span><b>${field.symbol}</b></label>
+      ${index === 0 ? `<em class="unit" style="grid-row:span ${fields.length}"><span>${field.unit}</span>${fields.length > 1 ? '<small>共通</small>' : ''}</em>` : ''}
+      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ動作・下降時 ${field.label}" /></span>
+      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ動作・上昇時 ${field.label}" /></span>
+      <span class="field"><input id="unloadDown-${field.key}" type="number" min="0" step="any" value="${field.unloadDown}" aria-label="荷おろし動作・下降時 ${field.label}" /></span>
+      <span class="field"><input id="unloadUp-${field.key}" type="number" min="0" step="any" value="${field.unloadUp}" aria-label="荷おろし動作・上昇時 ${field.label}" /></span>
+    </div>`).join('');
+  inputContainer.insertAdjacentHTML('beforeend', `<div class="motion-group">${rows}</div>`);
 });
 
 const detailRows = document.getElementById('detailRows');
 segmentNames.forEach((name, index) => {
   const number = index + 1;
-  detailRows.insertAdjacentHTML('beforeend', `<tr><td><span class="tag">T${number}</span></td><td>${name}</td><td id="down-distance-${number}">—</td><td id="down-time-${number}">—</td><td id="up-distance-${number}">—</td><td id="up-time-${number}">—</td></tr>`);
+  detailRows.insertAdjacentHTML('beforeend', `<tr><td><span class="tag">T${number}</span></td><td>${name}</td>${['down', 'up', 'unloadDown', 'unloadUp'].map((direction) => `<td id="${direction}-distance-${number}">—</td><td id="${direction}-time-${number}">—</td>`).join('')}</tr>`);
 });
 
 const allInputs = [...document.querySelectorAll('input')];
+let simulationResults = null;
+let handAnimation = null;
 const format = (value, digits = 2) => Number.isFinite(value)
   ? value.toLocaleString('ja-JP', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   : '—';
@@ -51,6 +63,9 @@ function calculateMotion(values) {
 }
 
 function setText(id, value) { document.getElementById(id).textContent = value; }
+function setTotalFormula(id, downDelay, downMotion, grip, upDelay, upMotion, transfer, servo, total) {
+  document.getElementById(id).innerHTML = `TM = ${format(downDelay)} + ${format(downMotion)} + <mark>${format(grip)}</mark> + ${format(upDelay)} + ${format(upMotion)} = ${format(transfer)} 秒<br>TC = ${format(transfer)} + <mark>${format(servo)}</mark> = ${format(total)} 秒`;
+}
 function drawSpeedChart(series = []) {
   const canvas = document.getElementById('speedChart');
   const container = canvas.parentElement;
@@ -114,24 +129,65 @@ function drawSpeedChart(series = []) {
     context.beginPath(); context.moveTo(x(result.tt), y(values.v3)); context.lineTo(x(result.tt), y(0)); context.stroke();
     context.setLineDash([]);
   });
+
+  if (series.length) {
+    const boxWidth = width < 500 ? 145 : 170;
+    const rowHeight = 23;
+    const boxX = width - margin.right - boxWidth;
+    const boxY = margin.top + 9;
+    context.fillStyle = 'rgba(255,255,255,.92)';
+    context.strokeStyle = '#d5e1ec';
+    context.lineWidth = 1;
+    const headerHeight = 25;
+    context.fillRect(boxX, boxY, boxWidth, headerHeight + rowHeight * series.length + 8);
+    context.strokeRect(boxX, boxY, boxWidth, headerHeight + rowHeight * series.length + 8);
+    context.textBaseline = 'middle';
+    context.font = `700 ${width < 500 ? 10 : 11}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    context.fillStyle = '#263c55';
+    context.textAlign = 'left';
+    context.fillText('動作時間 TT', boxX + 9, boxY + 14);
+    context.strokeStyle = '#e2e8ef';
+    context.beginPath(); context.moveTo(boxX, boxY + headerHeight); context.lineTo(boxX + boxWidth, boxY + headerHeight); context.stroke();
+    series.forEach(({ result, color }, index) => {
+      const rowY = boxY + headerHeight + 14 + index * rowHeight;
+      context.fillStyle = color;
+      context.fillRect(boxX + 9, rowY - 2, 17, 4);
+      context.textAlign = 'left';
+      context.fillText(chartSeriesNames[index], boxX + 32, rowY);
+      context.textAlign = 'right';
+      context.fillText(`${format(result.tt)} s`, boxX + boxWidth - 9, rowY);
+    });
+  }
 }
 function renderEmpty() {
-  ['totalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal'].forEach((id) => setText(id, '—'));
+  simulationResults = null;
+  if (handAnimation) handAnimation.cancel();
+  setText('simulationTime', '動作時間 TT：— 秒');
+  setText('simulationStatus', '入力値を確認してください。');
+  ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'unloadTransferTime', 'unloadServoResult', 'unloadDownMotion', 'unloadDownDelay', 'unloadUpMotion', 'unloadUpDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
   setText('totalMilliseconds', '— ms');
+  setText('unloadTotalMilliseconds', '— ms');
+  setText('pickupTotalFormula', '—');
+  setText('unloadTotalFormula', '—');
   drawSpeedChart();
-  ['down', 'up'].forEach((direction) => { for (let i = 1; i <= 5; i += 1) { setText(`${direction}-distance-${i}`, '—'); setText(`${direction}-time-${i}`, '—'); } });
+  ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { for (let i = 1; i <= 5; i += 1) { setText(`${direction}-distance-${i}`, '—'); setText(`${direction}-time-${i}`, '—'); } });
 }
 
 function calculate() {
   const down = readDirection('down');
   const up = readDirection('up');
+  const unloadDown = readDirection('unloadDown');
+  const unloadUp = readDirection('unloadUp');
   const tg = Number(document.getElementById('tg').value);
   const servo = Number(document.getElementById('servo').value);
+  const unloadTg = Number(document.getElementById('unload-tg').value);
+  const unloadServo = Number(document.getElementById('unload-servo').value);
   const warning = document.getElementById('warning');
-  const values = [...Object.values(down), ...Object.values(up), tg, servo];
+  const directions = [down, up, unloadDown, unloadUp];
+  const values = [...directions.flatMap(Object.values), tg, servo, unloadTg, unloadServo];
   const positiveKeys = ['a1', 'a2', 'v1', 'v2', 'v3'];
   const invalid = values.some((value) => !Number.isFinite(value) || value < 0)
-    || positiveKeys.some((key) => down[key] === 0 || up[key] === 0);
+    || positiveKeys.some((key) => directions.some((direction) => direction[key] === 0));
 
   if (invalid) {
     warning.textContent = '速度・加速度には0より大きい値、その他の項目には0以上の値を入力してください。';
@@ -141,26 +197,45 @@ function calculate() {
   }
   const downResult = calculateMotion(down);
   const upResult = calculateMotion(up);
-  if (downResult.distances[2] < 0 || upResult.distances[2] < 0) {
+  const unloadDownResult = calculateMotion(unloadDown);
+  const unloadUpResult = calculateMotion(unloadUp);
+  if ([downResult, upResult, unloadDownResult, unloadUpResult].some((result) => result.distances[2] < 0)) {
     warning.textContent = '昇降ストロークが不足しています。加減速・クリープ距離の合計がストロークを超えないようにしてください。';
     warning.hidden = false;
     renderEmpty();
     return;
   }
   warning.hidden = true;
+  if (handAnimation) handAnimation.cancel();
+  document.querySelectorAll('[data-simulation]').forEach((button) => button.classList.remove('active'));
+  setText('simulationTime', '動作時間 TT：— 秒');
+  setText('simulationStatus', '動作を選択すると、実際の動作時間 TT に合わせて再生します。');
+  simulationResults = { down: downResult, up: upResult, unloadDown: unloadDownResult, unloadUp: unloadUpResult };
 
   const actualTransfer = downResult.tt + down.tr + tg + upResult.tt + up.tr;
   const total = actualTransfer + servo;
+  const unloadActualTransfer = unloadDownResult.tt + unloadDown.tr + unloadTg + unloadUpResult.tt + unloadUp.tr;
+  const unloadTotal = unloadActualTransfer + unloadServo;
   setText('totalTime', format(total));
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
+  setText('unloadTotalTime', format(unloadTotal));
+  setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
+  setTotalFormula('pickupTotalFormula', down.tr, downResult.tt, tg, up.tr, upResult.tt, actualTransfer, servo, total);
+  setTotalFormula('unloadTotalFormula', unloadDown.tr, unloadDownResult.tt, unloadTg, unloadUp.tr, unloadUpResult.tt, unloadActualTransfer, unloadServo, unloadTotal);
   setText('transferTime', `${format(actualTransfer)} 秒`);
   setText('servoResult', `${format(servo)} 秒`);
   setText('downMotion', `${format(downResult.tt)} 秒`);
   setText('downDelay', `${format(down.tr)} 秒`);
   setText('upMotion', `${format(upResult.tt)} 秒`);
   setText('upDelay', `${format(up.tr)} 秒`);
+  setText('unloadTransferTime', `${format(unloadActualTransfer)} 秒`);
+  setText('unloadServoResult', `${format(unloadServo)} 秒`);
+  setText('unloadDownMotion', `${format(unloadDownResult.tt)} 秒`);
+  setText('unloadDownDelay', `${format(unloadDown.tr)} 秒`);
+  setText('unloadUpMotion', `${format(unloadUpResult.tt)} 秒`);
+  setText('unloadUpDelay', `${format(unloadUp.tr)} 秒`);
 
-  [['down', down, downResult], ['up', up, upResult]].forEach(([direction, input, result]) => {
+  [['down', down, downResult], ['up', up, upResult], ['unloadDown', unloadDown, unloadDownResult], ['unloadUp', unloadUp, unloadUpResult]].forEach(([direction, input, result]) => {
     result.distances.forEach((distance, index) => setText(`${direction}-distance-${index + 1}`, `${format(distance)} mm`));
     result.times.forEach((time, index) => setText(`${direction}-time-${index + 1}`, `${format(time)} s`));
     setText(`${direction}DistanceTotal`, `${format(input.sh)} mm`);
@@ -168,13 +243,39 @@ function calculate() {
   });
   drawSpeedChart([
     { values: down, result: downResult, color: '#1776d2' },
-    { values: up, result: upResult, color: '#148572' }
+    { values: up, result: upResult, color: '#148572' },
+    { values: unloadDown, result: unloadDownResult, color: '#e07a16' },
+    { values: unloadUp, result: unloadUpResult, color: '#8c5ac7' }
   ]);
 }
 
 allInputs.forEach((input) => input.addEventListener('input', calculate));
+document.querySelectorAll('[data-simulation]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const direction = button.dataset.simulation;
+    const result = simulationResults?.[direction];
+    if (!result) return;
+    document.querySelectorAll('[data-simulation]').forEach((item) => item.classList.toggle('active', item === button));
+    if (handAnimation) handAnimation.cancel();
+    const isUp = direction === 'up' || direction === 'unloadUp';
+    const upper = 'translate(-50%, 0)';
+    const lower = 'translate(-50%, 345px)';
+    const duration = Math.max(result.tt * 1000, 300);
+    const handUnit = document.getElementById('handUnit');
+    const label = button.textContent;
+    setText('simulationTime', `動作時間 TT：${format(result.tt)} 秒`);
+    setText('simulationStatus', `${label}を再生中です。`);
+    handAnimation = handUnit.animate(
+      isUp ? [{ transform: lower }, { transform: upper }] : [{ transform: upper }, { transform: lower }],
+      { duration, easing: 'ease-in-out', fill: 'forwards' }
+    );
+    handAnimation.addEventListener('finish', () => setText('simulationStatus', `${label}が完了しました。`), { once: true });
+  });
+});
 document.getElementById('resetButton').addEventListener('click', () => {
-  motionFields.forEach((field) => { document.getElementById(`down-${field.key}`).value = field.down; document.getElementById(`up-${field.key}`).value = field.up; });
+  motionFields.forEach((field) => {
+    ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { document.getElementById(`${direction}-${field.key}`).value = field[direction]; });
+  });
   Object.entries(extras).forEach(([id, value]) => { document.getElementById(id).value = value; });
   calculate();
 });
