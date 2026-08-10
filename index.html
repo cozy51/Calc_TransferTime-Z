@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="TOOL移載の荷つかみ昇降サイクルタイムを自動計算します。" />
-    <title>TransferCycleTime | TOOL移載時間計算</title>
+    <meta name="description" content="TOOL移載の荷つかみ動作・荷おろし動作のサイクルタイムを自動計算します。" />
+    <title>TransferTime-Z | TOOL移載時間計算</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -13,75 +13,55 @@
         <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
         <div>
           <p class="eyebrow">CYCLE TIME CALCULATOR</p>
-          <h1>TransferCycleTime</h1>
-          <p class="subtitle">TOOL移載・荷つかみサイクルタイム計算</p>
+          <h1>TransferTime-Z</h1>
+          <p class="subtitle">TOOL移載・荷つかみ動作／荷おろし動作サイクルタイム計算</p>
         </div>
       </div>
     </header>
 
     <main class="layout">
+      <div class="input-column">
       <section class="panel input-panel" aria-labelledby="input-title">
         <div class="section-heading">
-          <div><span class="step">01</span><h2 id="input-title">荷つかみ条件</h2></div>
-          <button id="resetButton" class="reset-button" type="button">荷つかみ初期値に戻す</button>
+          <div><span class="step">01</span><h2 id="input-title">移載動作条件</h2></div>
+          <button id="resetButton" class="reset-button" type="button">全サイクルを初期値に戻す</button>
         </div>
 
+        <div class="cycle-head" aria-hidden="true">
+          <span></span><span></span><strong>荷つかみ動作</strong><strong>荷おろし動作</strong>
+        </div>
         <div class="direction-head" aria-hidden="true">
-          <span>項目・単位</span><strong>荷つかみ下降</strong><strong>荷つかみ上昇</strong>
+          <span>項目・記号</span><span>単位</span><strong>下降時</strong><strong>上昇時</strong><strong>下降時</strong><strong>上昇時</strong>
+        </div>
+        <div class="shared-stroke-row">
+          <label for="shared-sh"><span>昇降ストローク</span><b>SH</b></label><em>mm</em>
+          <span class="field"><input id="shared-sh" type="number" min="0" step="any" value="2500" aria-label="全動作共通 昇降ストローク" /></span>
+          <strong>全動作共通</strong>
         </div>
         <div id="motionInputs" class="motion-inputs"></div>
 
         <div class="input-group extras-group">
           <h3>共通時間</h3>
-          <div class="input-grid">
-            <label><span>グリップ時間 <b>TG</b></span><span class="field"><input id="tg" type="number" min="0" step="any" value="0.27" /><em>s</em></span></label>
-            <label><span>サーボ切替時間</span><span class="field"><input id="servo" type="number" min="0" step="any" value="0.6" /><em>s</em></span></label>
+          <div class="extras-table">
+            <div class="extras-head"><span>項目・記号</span><span>単位</span><strong>荷つかみ動作</strong><strong>荷おろし動作</strong></div>
+            <div class="extras-row">
+              <span class="extras-name">グリップ時間 <b>TG</b></span><em>s</em>
+              <span class="field"><input id="tg" aria-label="荷つかみ動作・グリップ時間" type="number" min="0" step="any" value="0.27" /></span>
+              <span class="field"><input id="unload-tg" aria-label="荷おろし動作・グリップ時間" type="number" min="0" step="any" value="0.21" /></span>
+            </div>
+            <div class="extras-row">
+              <span class="extras-name">サーボ切替時間 <b>TS</b></span><em>s</em>
+              <span class="field"><input id="servo" aria-label="荷つかみ動作・サーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
+              <span class="field"><input id="unload-servo" aria-label="荷おろし動作・サーボ切替時間" type="number" min="0" step="any" value="0.6" /></span>
+            </div>
+            <div class="extras-row specification-input-row">
+              <span class="extras-name">仕様値 <b>TC</b></span><em>s</em>
+              <span class="field"><input id="pickup-spec" aria-label="荷つかみ動作・仕様値" type="number" min="0" step="any" value="7.7" /></span>
+              <span class="field"><input id="unload-spec" aria-label="荷おろし動作・仕様値" type="number" min="0" step="any" value="7.6" /></span>
+            </div>
           </div>
         </div>
       </section>
-
-      <section class="results-column" aria-labelledby="result-title" aria-live="polite">
-        <div class="panel summary-panel">
-          <div class="section-heading"><div><span class="step">02</span><h2 id="result-title">計算結果</h2></div></div>
-          <div id="warning" class="warning" role="alert" hidden></div>
-          <div class="total-card">
-            <p>総移載時間（Stop − Start）</p>
-            <div><strong id="totalTime">—</strong><span>秒</span></div>
-            <small id="totalMilliseconds">— ms</small>
-          </div>
-          <div class="summary-grid">
-            <div><span>実移載時間</span><strong id="transferTime">— <small>秒</small></strong></div>
-            <div><span>サーボ切替時間</span><strong id="servoResult">— <small>秒</small></strong></div>
-          </div>
-          <div class="cycle-summary">
-            <div class="cycle-label down">下降</div><div><span>昇降動作時間 TT</span><strong id="downMotion">— 秒</strong></div><div><span>制御遅れ TR</span><strong id="downDelay">— 秒</strong></div>
-            <div class="cycle-label up">上昇</div><div><span>昇降動作時間 TT</span><strong id="upMotion">— 秒</strong></div><div><span>制御遅れ TR</span><strong id="upDelay">— 秒</strong></div>
-          </div>
-          <div class="formula">総移載時間 = 下降TT + 下降TR + TG + 上昇TT + 上昇TR + サーボ切替時間</div>
-        </div>
-
-        <div class="panel chart-panel">
-          <div class="chart-heading">
-            <div><h2>速度線図</h2><p>縦軸：速度 ／ 横軸：時間</p></div>
-            <div class="chart-legend" aria-hidden="true"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span></div>
-          </div>
-          <div class="chart-wrap">
-            <canvas id="speedChart" role="img" aria-label="荷つかみ下降と荷つかみ上昇の速度時間線図"></canvas>
-          </div>
-          <div class="chart-mobile-legend"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span></div>
-          <p class="chart-note">各区間の所要時間に沿って、クリープ・加速・最高速・減速の速度推移を表示しています。</p>
-        </div>
-
-        <div class="panel detail-panel">
-          <h2>区間別詳細</h2>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th rowspan="2">区間</th><th rowspan="2">動作</th><th colspan="2">荷つかみ下降</th><th colspan="2">荷つかみ上昇</th></tr><tr><th>距離</th><th>時間</th><th>距離</th><th>時間</th></tr></thead>
-              <tbody id="detailRows"></tbody>
-              <tfoot><tr><td colspan="2">昇降動作時間 TT</td><td id="downDistanceTotal">—</td><td id="downTimeTotal">—</td><td id="upDistanceTotal">—</td><td id="upTimeTotal">—</td></tr></tfoot>
-            </table>
-          </div>
-        </div>
 
         <div class="panel calculation-panel">
           <div class="calculation-heading">
@@ -93,6 +73,7 @@
           </div>
           <div class="formula-section">
             <h3>区間時間・距離</h3>
+            <p class="calculation-order"><b>計算順</b> 左から右、上から下へ計算します：T1 → T2 → S2 → T4 → S4 → S3 → T3 → T5</p>
             <div class="formula-grid">
               <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
               <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
@@ -106,14 +87,120 @@
           </div>
           <div class="formula-section total-formulas">
             <h3>合計時間</h3>
-            <div class="total-formula-row"><b>昇降動作時間 <span>TT</span></b><code>T1 + T2 + T3 + T4 + T5</code></div>
-            <div class="total-formula-row"><b>実移載時間</b><code>下降TT + 下降TR + TG + 上昇TT + 上昇TR</code></div>
-            <div class="total-formula-row emphasis"><b>総移載時間</b><code>実移載時間 + サーボ切替時間</code></div>
+            <div class="total-formula-row"><b>動作時間 <span>TT</span></b><code>TT = T1 + T2 + T3 + T4 + T5</code></div>
+            <div class="total-formula-row"><b>実移載時間 <span>TM</span></b><code>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</code></div>
+            <div class="total-formula-row emphasis"><b>総移載時間 <span>TC</span></b><code>TC = TM + <mark>TS</mark></code></div>
           </div>
         </div>
+      </div>
+
+      <section class="results-column" aria-labelledby="result-title" aria-live="polite">
+        <div class="panel summary-panel">
+          <div class="section-heading"><div><span class="step">02</span><h2 id="result-title">計算結果</h2></div></div>
+          <div id="warning" class="warning" role="alert" hidden></div>
+          <div class="total-card">
+            <p>荷つかみ動作・総移載時間 <b>TC</b>（Stop − Start）</p>
+            <div><strong id="totalTime">—</strong><span>秒</span></div>
+            <small id="totalMilliseconds">— ms</small>
+            <div class="specification-row"><span id="pickupSpecificationDisplay">仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
+          </div>
+          <div class="total-card unload-total-card">
+            <p>荷おろし動作・総移載時間 <b>TC</b>（Stop − Start）</p>
+            <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
+            <small id="unloadTotalMilliseconds">— ms</small>
+            <div class="specification-row"><span id="unloadSpecificationDisplay">仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
+          </div>
+          <div class="total-equations">
+            <p><b>荷つかみ動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="pickupTotalFormula">—</code></p>
+            <p><b>荷おろし動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="unloadTotalFormula">—</code></p>
+          </div>
+          <div class="motion-summary-block pickup-summary">
+            <h3>荷つかみ動作・内訳</h3>
+            <div class="summary-grid">
+              <div><span>実移載時間 <b>TM</b></span><strong id="transferTime">— <small>秒</small></strong></div>
+              <div class="auxiliary-time"><span>サーボ切替時間 <b>TS</b></span><strong id="servoResult">— <small>秒</small></strong></div>
+            </div>
+            <div class="cycle-summary">
+              <div class="cycle-label down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="downDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="downMotion">— 秒</strong></div>
+              <div class="cycle-label up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="upDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="upMotion">— 秒</strong></div>
+            </div>
+          </div>
+          <div class="motion-summary-block unload-summary">
+            <h3>荷おろし動作・内訳</h3>
+            <div class="summary-grid">
+              <div><span>実移載時間 <b>TM</b></span><strong id="unloadTransferTime">— <small>秒</small></strong></div>
+              <div class="auxiliary-time"><span>サーボ切替時間 <b>TS</b></span><strong id="unloadServoResult">— <small>秒</small></strong></div>
+            </div>
+            <div class="cycle-summary">
+              <div class="cycle-label unload-down">下降時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadDownDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="unloadDownMotion">— 秒</strong></div>
+              <div class="cycle-label unload-up">上昇時</div><div class="delay-item"><span>制御遅れ <b>TR</b></span><strong id="unloadUpDelay">— 秒</strong></div><div><span>動作時間 <b>TT</b></span><strong id="unloadUpMotion">— 秒</strong></div>
+            </div>
+          </div>
+          <div class="formula"><b>TM</b> = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）<br /><b>TC</b> = TM + <mark>TS</mark></div>
+        </div>
+
+        <div class="panel simulation-panel" aria-labelledby="simulation-title">
+          <div class="simulation-heading">
+            <div><h2 id="simulation-title">動作シミュレーション</h2><p>昇降ユニットを基準にしたハンドユニットの昇降動作</p></div>
+            <strong id="simulationTime">動作時間 TT：— 秒</strong>
+          </div>
+          <div class="simulation-controls" aria-label="シミュレーションする動作を選択">
+            <button class="active" type="button" data-simulation="down" aria-pressed="true">荷つかみ動作・下降時</button>
+            <button type="button" data-simulation="up" aria-pressed="false">荷つかみ動作・上昇時</button>
+            <button type="button" data-simulation="unloadDown" aria-pressed="false">荷おろし動作・下降時</button>
+            <button type="button" data-simulation="unloadUp" aria-pressed="false">荷おろし動作・上昇時</button>
+          </div>
+          <div class="simulation-telemetry" aria-label="シミュレーション計測値">
+            <div><span>経過時間</span><strong id="simulationElapsed">0.00 s</strong></div>
+            <div><span>移動位置</span><strong id="simulationPosition">0.00 mm</strong></div>
+            <div><span>速度</span><strong id="simulationVelocity">0.00 mm/s</strong></div>
+            <div><span>加速度</span><strong id="simulationAcceleration">0.00 mm/s²</strong></div>
+          </div>
+          <div class="auto-pause-control">
+            <label for="simulationPauseTarget"><span>自動一時停止条件</span><span class="auto-pause-field"><select id="simulationPauseCriterion" aria-label="自動一時停止の基準"><option value="position">位置基準</option><option value="time">時間基準</option><option value="velocity">速度基準</option><option value="none">指定なし</option></select><input id="simulationPauseTarget" type="number" min="0" step="any" placeholder="未指定" /><em id="simulationPauseUnit">mm</em></span></label>
+            <small>位置・時間・速度のいずれか1つを選択し、指定値へ到達すると自動で一時停止します。</small>
+          </div>
+          <button id="simulationPause" class="simulation-pause" type="button" disabled>スタート</button>
+          <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
+            <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
+            <div id="handUnit" class="hand-unit"><span>ハンドユニット</span></div>
+            <div id="simulationCargo" class="simulation-cargo" aria-label="搬送する荷物"><span>荷物</span></div>
+            <div class="simulation-scale"><span>上端</span><i></i><span>下端</span></div>
+          </div>
+          <p id="simulationStatus" class="simulation-status" aria-live="polite">動作を選択すると、実際の動作時間 TT に合わせて再生します。</p>
+        </div>
+
+        <div class="panel chart-panel">
+          <div class="chart-heading">
+            <div><h2>速度線図</h2><p>縦軸：速度 ／ 横軸：時間</p></div>
+            <div class="chart-legend" aria-hidden="true"><span class="down-line">荷つかみ動作・下降時</span><span class="up-line">荷つかみ動作・上昇時</span><span class="unload-down-line">荷おろし動作・下降時</span><span class="unload-up-line">荷おろし動作・上昇時</span></div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="speedChart" role="img" aria-label="荷つかみ動作と荷おろし動作の下降時・上昇時速度時間線図"></canvas>
+          </div>
+          <div class="chart-mobile-legend"><span class="down-line">荷つかみ動作・下降時</span><span class="up-line">荷つかみ動作・上昇時</span><span class="unload-down-line">荷おろし動作・下降時</span><span class="unload-up-line">荷おろし動作・上昇時</span></div>
+          <p class="chart-note">グラフ内の時間は、各方向の動作時間 TT です。クリープ・加速・最高速・減速の速度推移を表示しています。</p>
+        </div>
+
+        <div class="panel detail-panel">
+          <h2>区間別詳細</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th rowspan="3">区間</th><th rowspan="3">動作</th><th colspan="4">荷つかみ動作</th><th colspan="4">荷おろし動作</th></tr>
+                <tr><th colspan="2">下降時</th><th colspan="2">上昇時</th><th colspan="2">下降時</th><th colspan="2">上昇時</th></tr>
+                <tr><th>距離</th><th>時間</th><th>距離</th><th>時間</th><th>距離</th><th>時間</th><th>距離</th><th>時間</th></tr>
+              </thead>
+              <tbody id="detailRows"></tbody>
+              <tfoot><tr><td colspan="2">合計</td><td id="downDistanceTotal">—</td><td id="downTimeTotal">—</td><td id="upDistanceTotal">—</td><td id="upTimeTotal">—</td><td id="unloadDownDistanceTotal">—</td><td id="unloadDownTimeTotal">—</td><td id="unloadUpDistanceTotal">—</td><td id="unloadUpTimeTotal">—</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+
+
       </section>
     </main>
-    <footer>TransferCycleTime <span>•</span> TOOL Transfer Engineering Calculator</footer>
+    <footer>TransferTime-Z <span>•</span> TOOL Transfer Engineering Calculator</footer>
     <script src="app.js"></script>
   </body>
 </html>
