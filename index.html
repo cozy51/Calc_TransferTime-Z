@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="TOOL移載の昇降サイクルタイムを自動計算します。" />
+    <title>TransferCycleTime | TOOL移載時間計算</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span></div>
+        <div>
+          <p class="eyebrow">CYCLE TIME CALCULATOR</p>
+          <h1>TransferCycleTime</h1>
+          <p class="subtitle">TOOL移載・昇降サイクルタイム計算</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel input-panel" aria-labelledby="input-title">
+        <div class="section-heading">
+          <div><span class="step">01</span><h2 id="input-title">条件入力</h2></div>
+          <button id="resetButton" class="reset-button" type="button">初期値に戻す</button>
+        </div>
+
+        <div class="input-group">
+          <h3>速度・加速度</h3>
+          <div class="input-grid">
+            <label><span>昇降加速度 <b>A1</b></span><span class="field"><input id="a1" type="number" min="0" step="any" value="1000" /><em>mm/s²</em></span></label>
+            <label><span>昇降減速度 <b>A2</b></span><span class="field"><input id="a2" type="number" min="0" step="any" value="1000" /><em>mm/s²</em></span></label>
+            <label><span>上端クリープ速度 <b>V1</b></span><span class="field"><input id="v1" type="number" min="0" step="any" value="50" /><em>mm/s</em></span></label>
+            <label><span>昇降速度 <b>V2</b></span><span class="field"><input id="v2" type="number" min="0" step="any" value="400" /><em>mm/s</em></span></label>
+            <label><span>下端クリープ速度 <b>V3</b></span><span class="field"><input id="v3" type="number" min="0" step="any" value="50" /><em>mm/s</em></span></label>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <h3>距離</h3>
+          <div class="input-grid">
+            <label><span>上端クリープ距離 <b>S1</b></span><span class="field"><input id="s1" type="number" min="0" step="any" value="20" /><em>mm</em></span></label>
+            <label><span>下端クリープ距離 <b>S5</b></span><span class="field"><input id="s5" type="number" min="0" step="any" value="20" /><em>mm</em></span></label>
+            <label><span>昇降ストローク <b>SH</b></span><span class="field"><input id="sh" type="number" min="0" step="any" value="500" /><em>mm</em></span></label>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <h3>付加時間</h3>
+          <div class="input-grid">
+            <label><span>制御遅れ <b>TR</b></span><span class="field"><input id="tr" type="number" min="0" step="any" value="0.2" /><em>s</em></span></label>
+            <label><span>グリップ時間 <b>TG</b></span><span class="field"><input id="tg" type="number" min="0" step="any" value="0.5" /><em>s</em></span></label>
+            <label><span>サーボ切替時間</span><span class="field"><input id="servo" type="number" min="0" step="any" value="0.3" /><em>s</em></span></label>
+          </div>
+        </div>
+        <p class="input-note">入力値は下降・上昇で共通として計算します。</p>
+      </section>
+
+      <section class="results-column" aria-labelledby="result-title" aria-live="polite">
+        <div class="panel summary-panel">
+          <div class="section-heading"><div><span class="step">02</span><h2 id="result-title">計算結果</h2></div></div>
+          <div id="warning" class="warning" role="alert" hidden></div>
+          <div class="total-card">
+            <p>総移載時間</p>
+            <div><strong id="totalTime">—</strong><span>秒</span></div>
+            <small id="totalMilliseconds">— ms</small>
+          </div>
+          <div class="summary-grid">
+            <div><span>昇降動作時間 <b>TT</b></span><strong id="motionTime">— <small>s</small></strong></div>
+            <div><span>実移載時間</span><strong id="transferTime">— <small>s</small></strong></div>
+          </div>
+          <div class="formula">総移載時間 = ( TT + TR ) × 2 + TG + サーボ切替時間</div>
+        </div>
+
+        <div class="panel detail-panel">
+          <h2>区間別詳細</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>区間</th><th>動作</th><th>距離</th><th>時間</th></tr></thead>
+              <tbody>
+                <tr><td><span class="tag">T1</span></td><td>上端クリープ</td><td id="distance1">—</td><td id="time1">—</td></tr>
+                <tr><td><span class="tag">T2</span></td><td>加速</td><td id="distance2">—</td><td id="time2">—</td></tr>
+                <tr><td><span class="tag">T3</span></td><td>定速</td><td id="distance3">—</td><td id="time3">—</td></tr>
+                <tr><td><span class="tag">T4</span></td><td>減速</td><td id="distance4">—</td><td id="time4">—</td></tr>
+                <tr><td><span class="tag">T5</span></td><td>下端クリープ</td><td id="distance5">—</td><td id="time5">—</td></tr>
+              </tbody>
+              <tfoot><tr><td colspan="2">合計</td><td id="distanceTotal">—</td><td id="timeTotal">—</td></tr></tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>TransferCycleTime <span>•</span> TOOL Transfer Engineering Calculator</footer>
+    <script src="app.js"></script>
+  </body>
+</html>
