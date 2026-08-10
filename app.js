@@ -355,11 +355,14 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
       if (!simulationState || simulationState.paused) return;
       simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
       simulationState.lastTime = now;
-      const progress = result.tt > 0 ? simulationState.elapsed / result.tt : 1;
-      const offset = (isUp ? 1 - progress : progress) * 345;
+      const current = getKinematics(values, result, simulationState.elapsed);
+      // Convert the calculated travel distance—not elapsed-time progress—to the
+      // diagram offset. This keeps each creep section visibly slow and makes the
+      // acceleration, constant-speed and deceleration sections match the inputs.
+      const travelProgress = values.sh > 0 ? Math.min(Math.max(current.position / values.sh, 0), 1) : 1;
+      const offset = (isUp ? 1 - travelProgress : travelProgress) * 345;
       handUnit.style.transform = `translate(-50%, ${offset}px)`;
       cargo.style.transform = `translate(-50%, ${carriesLoad ? offset - 345 : 0}px)`;
-      const current = getKinematics(values, result, simulationState.elapsed);
       setSimulationTelemetry(simulationState.elapsed, current.position, current.velocity, current.acceleration);
       const measurements = { position: current.position, time: simulationState.elapsed, velocity: current.velocity };
       if (simulationState.targetValue !== null && !simulationState.autoPaused && measurements[simulationState.pauseCriterion] >= simulationState.targetValue) {
