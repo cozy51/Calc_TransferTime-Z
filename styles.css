@@ -152,9 +152,12 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .simulation-stage { position:relative; height:560px; margin-top:12px; overflow:hidden; background:linear-gradient(90deg,#f7f9fb,#edf3f8); border:1px solid var(--line); border-radius:6px; }
 .creep-zone { position:absolute; z-index:0; left:0; right:0; background:repeating-linear-gradient(45deg,rgba(217,131,22,.1) 0,rgba(217,131,22,.1) 9px,rgba(217,131,22,.03) 9px,rgba(217,131,22,.03) 18px); border-top:1px dashed #dda45f; border-bottom:1px dashed #dda45f; transition:background .2s; }
 .creep-zone.active { background:repeating-linear-gradient(45deg,rgba(217,131,22,.26) 0,rgba(217,131,22,.26) 9px,rgba(217,131,22,.11) 9px,rgba(217,131,22,.11) 18px); border-color:#c8760d; }
-.creep-zone span { position:absolute; top:3px; left:11px; color:#9c5c0b; font-size:11px; font-weight:800; white-space:nowrap; }
-.stage-phase { position:absolute; z-index:3; top:11px; left:13px; padding:5px 10px; color:#183a5f; background:rgba(255,255,255,.92); border:1px solid var(--line); border-radius:4px; font-size:11px; font-weight:800; }
+.creep-zone span { position:absolute; top:50%; left:11px; transform:translateY(-50%); color:#9c5c0b; font-size:11px; font-weight:800; white-space:nowrap; }
+.stage-phase { position:absolute; z-index:3; top:11px; left:13px; display:flex; align-items:center; gap:8px; padding:5px 10px; color:#183a5f; background:rgba(255,255,255,.92); border:1px solid var(--line); border-radius:4px; font-size:11px; font-weight:800; }
+.stage-phase em { color:var(--muted); font-size:10px; font-style:normal; font-weight:700; }
+.stage-phase em:empty { display:none; }
 .stage-phase.creep { color:#8a4b06; background:#fff2e0; border-color:#e3ac6c; }
+.stage-phase.creep em { color:#b07231; }
 .lift-unit { position:absolute; top:31px; left:50%; width:150px; height:70px; transform:translateX(-50%); color:white; background:#405b78; border:4px solid #2b4057; border-radius:5px; box-shadow:0 5px 12px rgba(29,44,63,.17); }
 .lift-unit span,.hand-unit span { position:absolute; inset:0; display:grid; place-content:center; font-size:12px; font-weight:800; }
 .lift-unit i { position:absolute; top:66px; left:67px; width:8px; height:440px; background:#8da0b4; box-shadow:inset 0 0 0 2px #6b7f94; }
