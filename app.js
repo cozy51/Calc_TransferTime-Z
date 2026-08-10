@@ -40,7 +40,7 @@ segmentNames.forEach((name, index) => {
 
 const allInputs = [...document.querySelectorAll('input')];
 let simulationResults = null;
-let handAnimation = null;
+let simulationState = null;
 const format = (value, digits = 2) => Number.isFinite(value)
   ? value.toLocaleString('ja-JP', { minimumFractionDigits: digits, maximumFractionDigits: digits })
   : '—';
@@ -63,6 +63,36 @@ function calculateMotion(values) {
 }
 
 function setText(id, value) { document.getElementById(id).textContent = value; }
+function cancelSimulation() {
+  if (simulationState?.frame) cancelAnimationFrame(simulationState.frame);
+  simulationState = null;
+  document.getElementById('handUnit').style.transform = 'translate(-50%, 0)';
+  const pauseButton = document.getElementById('simulationPause');
+  pauseButton.disabled = true;
+  pauseButton.textContent = '一時停止';
+}
+function setSimulationTelemetry(elapsed = 0, position = 0, velocity = 0, acceleration = 0) {
+  setText('simulationElapsed', `${format(elapsed)} s`);
+  setText('simulationPosition', `${format(position)} mm`);
+  setText('simulationVelocity', `${format(velocity)} mm/s`);
+  setText('simulationAcceleration', `${format(acceleration)} mm/s²`);
+}
+function getKinematics(values, result, elapsed) {
+  const [t1, t2, t3, t4, t5] = result.times;
+  let time = elapsed;
+  if (time < t1 && t1 > 0) return { position: values.s1 * time / t1, velocity: values.v1, acceleration: 0 };
+  time -= t1;
+  if (time < t2) return { position: values.s1 + values.a1 * time ** 2 / 2, velocity: values.a1 * time, acceleration: values.a1 };
+  time -= t2;
+  if (time < t3) return { position: values.s1 + result.distances[1] + values.v2 * time, velocity: values.v2, acceleration: 0 };
+  time -= t3;
+  const decelerationStart = values.s1 + result.distances[1] + result.distances[2];
+  if (time < t4) return { position: decelerationStart + values.v2 * time - values.a2 * time ** 2 / 2, velocity: Math.max(values.v2 - values.a2 * time, 0), acceleration: -values.a2 };
+  time -= t4;
+  const creepStart = decelerationStart + result.distances[3];
+  if (time < t5) return { position: creepStart + values.v3 * time, velocity: values.v3, acceleration: 0 };
+  return { position: values.sh, velocity: 0, acceleration: 0 };
+}
 function setTotalFormula(id, downDelay, downMotion, grip, upDelay, upMotion, transfer, servo, total) {
   document.getElementById(id).innerHTML = `TM = ${format(downDelay)} + ${format(downMotion)} + <mark>${format(grip)}</mark> + ${format(upDelay)} + ${format(upMotion)} = ${format(transfer)} 秒<br>TC = ${format(transfer)} + <mark>${format(servo)}</mark> = ${format(total)} 秒`;
 }
@@ -161,7 +191,8 @@ function drawSpeedChart(series = []) {
 }
 function renderEmpty() {
   simulationResults = null;
-  if (handAnimation) handAnimation.cancel();
+  cancelSimulation();
+  setSimulationTelemetry();
   setText('simulationTime', '動作時間 TT：— 秒');
   setText('simulationStatus', '入力値を確認してください。');
   ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'unloadTransferTime', 'unloadServoResult', 'unloadDownMotion', 'unloadDownDelay', 'unloadUpMotion', 'unloadUpDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
@@ -206,11 +237,17 @@ function calculate() {
     return;
   }
   warning.hidden = true;
-  if (handAnimation) handAnimation.cancel();
+  cancelSimulation();
+  setSimulationTelemetry();
   document.querySelectorAll('[data-simulation]').forEach((button) => button.classList.remove('active'));
   setText('simulationTime', '動作時間 TT：— 秒');
   setText('simulationStatus', '動作を選択すると、実際の動作時間 TT に合わせて再生します。');
-  simulationResults = { down: downResult, up: upResult, unloadDown: unloadDownResult, unloadUp: unloadUpResult };
+  simulationResults = {
+    down: { result: downResult, values: down },
+    up: { result: upResult, values: up },
+    unloadDown: { result: unloadDownResult, values: unloadDown },
+    unloadUp: { result: unloadUpResult, values: unloadUp }
+  };
 
   const actualTransfer = downResult.tt + down.tr + tg + upResult.tt + up.tr;
   const total = actualTransfer + servo;
@@ -253,24 +290,51 @@ allInputs.forEach((input) => input.addEventListener('input', calculate));
 document.querySelectorAll('[data-simulation]').forEach((button) => {
   button.addEventListener('click', () => {
     const direction = button.dataset.simulation;
-    const result = simulationResults?.[direction];
-    if (!result) return;
+    const simulation = simulationResults?.[direction];
+    if (!simulation) return;
+    const { result, values } = simulation;
     document.querySelectorAll('[data-simulation]').forEach((item) => item.classList.toggle('active', item === button));
-    if (handAnimation) handAnimation.cancel();
+    cancelSimulation();
     const isUp = direction === 'up' || direction === 'unloadUp';
-    const upper = 'translate(-50%, 0)';
-    const lower = 'translate(-50%, 345px)';
-    const duration = Math.max(result.tt * 1000, 300);
     const handUnit = document.getElementById('handUnit');
     const label = button.textContent;
     setText('simulationTime', `動作時間 TT：${format(result.tt)} 秒`);
     setText('simulationStatus', `${label}を再生中です。`);
-    handAnimation = handUnit.animate(
-      isUp ? [{ transform: lower }, { transform: upper }] : [{ transform: upper }, { transform: lower }],
-      { duration, easing: 'ease-in-out', fill: 'forwards' }
-    );
-    handAnimation.addEventListener('finish', () => setText('simulationStatus', `${label}が完了しました。`), { once: true });
+    document.getElementById('simulationPause').disabled = false;
+    simulationState = { elapsed: 0, lastTime: performance.now(), paused: false, frame: null };
+    const renderFrame = (now) => {
+      if (!simulationState || simulationState.paused) return;
+      simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
+      simulationState.lastTime = now;
+      const progress = result.tt > 0 ? simulationState.elapsed / result.tt : 1;
+      const offset = (isUp ? 1 - progress : progress) * 345;
+      handUnit.style.transform = `translate(-50%, ${offset}px)`;
+      const current = getKinematics(values, result, simulationState.elapsed);
+      setSimulationTelemetry(simulationState.elapsed, current.position, current.velocity, current.acceleration);
+      if (simulationState.elapsed >= result.tt) {
+        setText('simulationStatus', `${label}が完了しました。`);
+        document.getElementById('simulationPause').disabled = true;
+        simulationState = null;
+        return;
+      }
+      simulationState.frame = requestAnimationFrame(renderFrame);
+    };
+    simulationState.renderFrame = renderFrame;
+    simulationState.frame = requestAnimationFrame(renderFrame);
   });
+});
+document.getElementById('simulationPause').addEventListener('click', (event) => {
+  if (!simulationState) return;
+  simulationState.paused = !simulationState.paused;
+  event.currentTarget.textContent = simulationState.paused ? '再開' : '一時停止';
+  if (simulationState.paused) {
+    if (simulationState.frame) cancelAnimationFrame(simulationState.frame);
+    setText('simulationStatus', '一時停止中です。');
+  } else {
+    simulationState.lastTime = performance.now();
+    setText('simulationStatus', 'シミュレーションを再開しました。');
+    simulationState.frame = requestAnimationFrame(simulationState.renderFrame);
+  }
 });
 document.getElementById('resetButton').addEventListener('click', () => {
   motionFields.forEach((field) => {

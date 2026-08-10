@@ -138,6 +138,13 @@
             <button type="button" data-simulation="unloadDown">荷おろし動作・下降時</button>
             <button type="button" data-simulation="unloadUp">荷おろし動作・上昇時</button>
           </div>
+          <div class="simulation-telemetry" aria-label="シミュレーション計測値">
+            <div><span>経過時間</span><strong id="simulationElapsed">0.00 s</strong></div>
+            <div><span>移動位置</span><strong id="simulationPosition">0.00 mm</strong></div>
+            <div><span>速度</span><strong id="simulationVelocity">0.00 mm/s</strong></div>
+            <div><span>加速度</span><strong id="simulationAcceleration">0.00 mm/s²</strong></div>
+          </div>
+          <button id="simulationPause" class="simulation-pause" type="button" disabled>一時停止</button>
           <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">
             <div class="lift-unit"><span>昇降ユニット</span><i></i></div>
             <div id="handUnit" class="hand-unit"><span>ハンドユニット</span></div>
