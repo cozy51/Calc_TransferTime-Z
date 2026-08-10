@@ -20,8 +20,9 @@ const HAND_CENTER_TOP = 130.5;
 // track they would be 1–2 px and look like a dead stop. When emphasis is on,
 // each creep section is guaranteed this share of the track instead.
 const CREEP_MIN_SHARE = 0.14;
-// Upper bound for the slow-motion playback used to compensate that magnification.
-const MAX_SLOW_FACTOR = 12;
+// The magnification is cancelled out by playing the section back that many times
+// slower, so capping it also caps how long the whole playback takes.
+const MAX_CREEP_MAGNIFICATION = 5;
 
 const inputContainer = document.getElementById('motionInputs');
 const motionGroups = motionFields.reduce((groups, field) => {
@@ -90,6 +91,7 @@ function setJudgement(id, total, specification) {
   element.className = `judgement ${passed ? 'passed' : 'failed'}`;
 }
 function cancelSimulation() {
+  stopRecording(true);
   if (simulationState?.frame) cancelAnimationFrame(simulationState.frame);
   simulationState = null;
   const handUnit = document.getElementById('handUnit');
@@ -101,6 +103,7 @@ function cancelSimulation() {
   const pauseButton = document.getElementById('simulationPause');
   pauseButton.disabled = true;
   pauseButton.textContent = 'スタート';
+  document.getElementById('simulationRecord').disabled = true;
 }
 function setSimulationTelemetry(elapsed = 0, position = 0, velocity = 0, acceleration = 0) {
   setText('simulationElapsed', `${format(elapsed)} s`);
@@ -144,11 +147,12 @@ function buildPositionScale(values, result, emphasise) {
   const raw = distances.map((distance) => (stroke > 0 ? distance / stroke : 0));
   let shares = raw;
   const creepIndexes = [0, 4].filter((index) => distances[index] > 0);
+  const creepTarget = (index) => Math.min(Math.max(raw[index], CREEP_MIN_SHARE), raw[index] * MAX_CREEP_MAGNIFICATION);
   if (emphasise && creepIndexes.length) {
-    const creepShare = creepIndexes.reduce((sum, index) => sum + Math.max(raw[index], CREEP_MIN_SHARE), 0);
+    const creepShare = creepIndexes.reduce((sum, index) => sum + creepTarget(index), 0);
     const otherShare = raw.reduce((sum, share, index) => sum + (creepIndexes.includes(index) ? 0 : share), 0);
     if (otherShare > 0 && creepShare < 1) {
-      shares = raw.map((share, index) => (creepIndexes.includes(index) ? Math.max(share, CREEP_MIN_SHARE) : share * (1 - creepShare) / otherShare));
+      shares = raw.map((share, index) => (creepIndexes.includes(index) ? creepTarget(index) : share * (1 - creepShare) / otherShare));
     }
   }
   const shareTotal = shares.reduce((sum, share) => sum + share, 0);
@@ -161,7 +165,7 @@ function buildPositionScale(values, result, emphasise) {
     // A magnified section would sweep more pixels in the same wall-clock time and
     // therefore look faster. Playing it back at raw/share of real time cancels the
     // magnification out, so the apparent speed matches the true-scale diagram.
-    const rate = raw[index] > 0 && share > 0 ? Math.max(raw[index] / share, 1 / MAX_SLOW_FACTOR) : 1;
+    const rate = raw[index] > 0 && share > 0 ? Math.max(raw[index] / share, 1 / MAX_CREEP_MAGNIFICATION) : 1;
     segments.push({ index, start: position, end: position + distance, offsetStart: offset, offsetEnd: offset + length, rate });
     position += distance;
     offset += length;
@@ -219,6 +223,262 @@ function renderSimulationFrame(state, kinematics) {
   phase.classList.toggle('creep', creeping);
   document.getElementById('creepZoneStart').classList.toggle('active', kinematics.segment === 0);
   document.getElementById('creepZoneEnd').classList.toggle('active', kinematics.segment === 4);
+}
+// ---- 動画出力 -------------------------------------------------------------
+// The stage is plain DOM, which MediaRecorder cannot capture, so the same
+// drawing is mirrored onto an off-screen canvas and that canvas is recorded.
+const VIDEO_WIDTH = 820;
+const VIDEO_HEADER = 138;
+const VIDEO_HEIGHT = VIDEO_HEADER + 560;
+const VIDEO_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif';
+const STAGE_LEFT = 24;
+const STAGE_RIGHT = VIDEO_WIDTH - 24;
+const STAGE_CENTER = VIDEO_WIDTH / 2;
+// Browsers drop non-ASCII names on blob downloads, so the file is named in romaji.
+const VIDEO_FILE_NAMES = { down: 'pickup-down', up: 'pickup-up', unloadDown: 'unload-down', unloadUp: 'unload-up' };
+let recorderState = null;
+
+function roundRectPath(context, x, y, width, height, radius) {
+  const r = Math.max(Math.min(radius, width / 2, height / 2), 0);
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.arcTo(x + width, y, x + width, y + height, r);
+  context.arcTo(x + width, y + height, x, y + height, r);
+  context.arcTo(x, y + height, x, y, r);
+  context.arcTo(x, y, x + width, y, r);
+  context.closePath();
+}
+function drawBox(context, x, y, width, height, radius, fill, stroke, lineWidth = 1) {
+  roundRectPath(context, x, y, width, height, radius);
+  if (fill) { context.fillStyle = fill; context.fill(); }
+  if (stroke) { context.strokeStyle = stroke; context.lineWidth = lineWidth; context.stroke(); }
+}
+function drawHatch(context, x, y, width, height, color, gap = 18, lineWidth = 9) {
+  context.save();
+  roundRectPath(context, x, y, width, height, 3);
+  context.clip();
+  context.strokeStyle = color;
+  context.lineWidth = lineWidth;
+  context.beginPath();
+  for (let i = -height; i < width + height; i += gap) { context.moveTo(x + i, y + height); context.lineTo(x + i + height, y); }
+  context.stroke();
+  context.restore();
+}
+function drawLabelledBox(context, x, y, width, height, radius, fill, stroke, lineWidth, text, color, fontSize) {
+  drawBox(context, x, y, width, height, radius, fill, stroke, lineWidth);
+  context.fillStyle = color;
+  context.font = `800 ${fontSize}px ${VIDEO_FONT}`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText(text, x + width / 2, y + height / 2);
+}
+function drawSimulationVideoFrame(context, state, kinematics) {
+  const offset = toStageOffset(state, kinematics.position);
+  const creeping = kinematics.segment === 0 || kinematics.segment === 4;
+  context.fillStyle = 'white';
+  context.fillRect(0, 0, VIDEO_WIDTH, VIDEO_HEIGHT);
+
+  context.textAlign = 'left';
+  context.textBaseline = 'alphabetic';
+  context.fillStyle = '#183a5f';
+  context.font = `800 21px ${VIDEO_FONT}`;
+  context.fillText(state.label, STAGE_LEFT, 36);
+  context.fillStyle = '#7b8b9d';
+  context.font = `600 12px ${VIDEO_FONT}`;
+  context.fillText('TransferTime-Z ／ 昇降ユニットを基準にしたハンドユニットの昇降動作', STAGE_LEFT, 56);
+  const ttText = `動作時間 TT：${format(state.result.tt)} 秒`;
+  context.font = `800 13px ${VIDEO_FONT}`;
+  const ttWidth = context.measureText(ttText).width + 20;
+  drawBox(context, STAGE_RIGHT - ttWidth, 20, ttWidth, 28, 4, '#e8f2fb', '#c3ddf3');
+  context.fillStyle = '#166dbd';
+  context.fillText(ttText, STAGE_RIGHT - ttWidth + 10, 39);
+
+  const cells = [
+    ['経過時間', `${format(state.elapsed)} s`],
+    ['移動位置', `${format(kinematics.position)} mm`],
+    ['速度', `${format(kinematics.velocity)} mm/s`],
+    ['加速度', `${format(kinematics.acceleration)} mm/s²`]
+  ];
+  const cellWidth = (STAGE_RIGHT - STAGE_LEFT - 30) / 4;
+  cells.forEach(([name, value], index) => {
+    const x = STAGE_LEFT + index * (cellWidth + 10);
+    drawBox(context, x, 70, cellWidth, 52, 4, '#f7f9fb', '#e2e8ef');
+    context.fillStyle = '#7b8b9d';
+    context.font = `600 11px ${VIDEO_FONT}`;
+    context.fillText(name, x + 11, 89);
+    context.fillStyle = '#183a5f';
+    context.font = `800 16px ${VIDEO_FONT}`;
+    context.fillText(value, x + 11, 111);
+  });
+
+  const stageWidth = STAGE_RIGHT - STAGE_LEFT;
+  context.save();
+  roundRectPath(context, STAGE_LEFT, VIDEO_HEADER, stageWidth, 560, 6);
+  context.clip();
+  const gradient = context.createLinearGradient(STAGE_LEFT, 0, STAGE_RIGHT, 0);
+  gradient.addColorStop(0, '#f7f9fb');
+  gradient.addColorStop(1, '#edf3f8');
+  context.fillStyle = gradient;
+  context.fillRect(STAGE_LEFT, VIDEO_HEADER, stageWidth, 560);
+
+  [0, 4].forEach((index) => {
+    const segment = state.scale.segments[index];
+    if (!segment || segment.end - segment.start <= 0) return;
+    const edges = [toStageOffset(state, segment.start), toStageOffset(state, segment.end)];
+    const top = VIDEO_HEADER + HAND_CENTER_TOP + Math.min(...edges);
+    const height = Math.max(Math.abs(edges[1] - edges[0]), 3);
+    const active = kinematics.segment === index;
+    drawHatch(context, STAGE_LEFT, top, stageWidth, height, active ? 'rgba(217,131,22,.3)' : 'rgba(217,131,22,.13)');
+    context.strokeStyle = active ? '#c8760d' : '#dda45f';
+    context.lineWidth = 1;
+    context.setLineDash([5, 4]);
+    context.beginPath();
+    context.moveTo(STAGE_LEFT, top); context.lineTo(STAGE_RIGHT, top);
+    context.moveTo(STAGE_LEFT, top + height); context.lineTo(STAGE_RIGHT, top + height);
+    context.stroke();
+    context.setLineDash([]);
+    const zoneLabel = `${segmentNames[index]}（T${index + 1}）${format(segment.end - segment.start, 1)} mm`;
+    context.font = `800 11px ${VIDEO_FONT}`;
+    context.textAlign = 'left';
+    context.textBaseline = 'middle';
+    drawBox(context, STAGE_LEFT + 8, top + height / 2 - 9, context.measureText(zoneLabel).width + 10, 18, 3, 'rgba(255,255,255,.8)');
+    context.fillStyle = '#9c5c0b';
+    context.fillText(zoneLabel, STAGE_LEFT + 13, top + height / 2);
+  });
+
+  context.fillStyle = '#8da0b4';
+  context.fillRect(STAGE_CENTER - 4, VIDEO_HEADER + 66, 8, 440);
+  drawLabelledBox(context, STAGE_CENTER - 75, VIDEO_HEADER + 31, 150, 70, 5, '#405b78', '#2b4057', 4, '昇降ユニット', 'white', 13);
+
+  const cargoTop = VIDEO_HEADER + 510 + (state.carriesLoad ? offset - TRACK_LENGTH : 0);
+  drawBox(context, STAGE_CENTER - 65, cargoTop, 130, 42, 3, '#e8bb6b', '#a96d1c', 3);
+  drawHatch(context, STAGE_CENTER - 65, cargoTop, 130, 42, '#dca850', 20, 10);
+  drawBox(context, STAGE_CENTER - 65, cargoTop, 130, 42, 3, null, '#a96d1c', 3);
+  context.fillStyle = '#4f330f';
+  context.font = `800 14px ${VIDEO_FONT}`;
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.fillText('荷物', STAGE_CENTER, cargoTop + 21);
+
+  drawLabelledBox(context, STAGE_CENTER - 46, VIDEO_HEADER + 103 + offset, 92, 55, 5, creeping ? '#ffe3b4' : '#ffc36b', creeping ? '#b8650a' : '#d98316', 3, 'ハンドユニット', '#713c05', 12);
+
+  context.strokeStyle = '#b8c6d5';
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(STAGE_RIGHT - 45, VIDEO_HEADER + 63);
+  context.lineTo(STAGE_RIGHT - 45, VIDEO_HEADER + 503);
+  context.stroke();
+  context.fillStyle = '#718196';
+  context.font = `700 11px ${VIDEO_FONT}`;
+  context.textAlign = 'center';
+  context.fillText('上端', STAGE_RIGHT - 45, VIDEO_HEADER + 49);
+  context.fillText('下端', STAGE_RIGHT - 45, VIDEO_HEADER + 517);
+
+  const phaseText = `区間 T${kinematics.segment + 1}：${segmentNames[kinematics.segment]}`;
+  const rateText = playbackRateLabel(state.scale.segments[kinematics.segment]?.rate ?? 1);
+  context.font = `800 12px ${VIDEO_FONT}`;
+  const phaseWidth = context.measureText(phaseText).width;
+  context.font = `700 11px ${VIDEO_FONT}`;
+  const badgeWidth = phaseWidth + context.measureText(rateText).width + 32;
+  drawBox(context, STAGE_LEFT + 13, VIDEO_HEADER + 11, badgeWidth, 28, 4, creeping ? '#fff2e0' : 'rgba(255,255,255,.92)', creeping ? '#e3ac6c' : '#e2e8ef');
+  context.textAlign = 'left';
+  context.fillStyle = creeping ? '#8a4b06' : '#183a5f';
+  context.font = `800 12px ${VIDEO_FONT}`;
+  context.fillText(phaseText, STAGE_LEFT + 24, VIDEO_HEADER + 25);
+  context.fillStyle = creeping ? '#b07231' : '#7b8b9d';
+  context.font = `700 11px ${VIDEO_FONT}`;
+  context.fillText(rateText, STAGE_LEFT + 24 + phaseWidth + 9, VIDEO_HEADER + 25);
+  context.restore();
+  drawBox(context, STAGE_LEFT, VIDEO_HEADER, stageWidth, 560, 6, null, '#e2e8ef');
+}
+function videoSupport() {
+  const canvas = document.createElement('canvas');
+  if (typeof window.MediaRecorder !== 'function' || typeof canvas.captureStream !== 'function') return null;
+  // H.264 MP4 first where it is really available (easiest to paste into reports),
+  // otherwise WebM. Bare 'video/mp4' is not trusted: builds without proprietary
+  // codecs report it as supported and then fail to produce a usable file.
+  return ['video/mp4;codecs=avc1.42E01E', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find((type) => MediaRecorder.isTypeSupported(type)) ?? null;
+}
+const VIDEO_MIME_TYPE = videoSupport();
+function stopRecording(discard = false) {
+  if (!recorderState) return;
+  const { recorder, frame } = recorderState;
+  recorderState.discard = recorderState.discard || discard;
+  if (frame) cancelAnimationFrame(frame);
+  recorderState.frame = null;
+  if (recorder.state !== 'inactive') recorder.stop();
+}
+function startRecording() {
+  const mimeType = VIDEO_MIME_TYPE;
+  const state = simulationState;
+  if (!state || recorderState || !mimeType) return;
+  if (state.frame) cancelAnimationFrame(state.frame);
+  state.paused = true;
+  state.started = false;
+  state.finished = false;
+  state.elapsed = 0;
+  const canvas = document.createElement('canvas');
+  canvas.width = VIDEO_WIDTH;
+  canvas.height = VIDEO_HEIGHT;
+  // Opaque context: a VP9 alpha plane is redundant here and trips up some players.
+  const context = canvas.getContext('2d', { alpha: false });
+  const stream = canvas.captureStream(30);
+  const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 5000000 });
+  const chunks = [];
+  recorderState = { recorder, chunks, frame: null, discard: false };
+  recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+  recorder.onstop = () => {
+    stream.getTracks().forEach((track) => track.stop());
+    const discarded = recorderState.discard;
+    recorderState = null;
+    setRecordingUi(false);
+    if (discarded || !chunks.length) {
+      setText('simulationStatus', '動画の書き出しを中止しました。');
+      return;
+    }
+    const blob = new Blob(chunks, { type: mimeType });
+    const anchor = document.createElement('a');
+    anchor.href = URL.createObjectURL(blob);
+    const stamp = new Date().toLocaleString('sv-SE').replace(/[-: ]/g, '').slice(2, 12);
+    anchor.download = `TransferTime-Z_${VIDEO_FILE_NAMES[state.key] ?? 'motion'}_${stamp}.${mimeType.includes('mp4') ? 'mp4' : 'webm'}`;
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(anchor.href), 2000);
+    setText('simulationStatus', `動画を保存しました（${anchor.download}／${format(blob.size / 1048576, 1)} MB）。`);
+  };
+  setRecordingUi(true);
+  recorder.start(100);
+  let lastTime = performance.now();
+  let tail = 0;
+  const step = (now) => {
+    if (!recorderState) return;
+    const rate = state.scale.segments[getKinematics(state.values, state.result, state.elapsed).segment]?.rate ?? 1;
+    state.elapsed = Math.min(state.elapsed + rate * (now - lastTime) / 1000, state.result.tt);
+    if (state.elapsed >= state.result.tt) tail += now - lastTime;
+    lastTime = now;
+    const current = getKinematics(state.values, state.result, state.elapsed);
+    renderSimulationFrame(state, current);
+    drawSimulationVideoFrame(context, state, current);
+    setText('simulationStatus', `録画中… ${format(state.elapsed)} / ${format(state.result.tt)} 秒`);
+    if (tail >= 700) {
+      state.finished = true;
+      stopRecording();
+      return;
+    }
+    recorderState.frame = requestAnimationFrame(step);
+  };
+  recorderState.frame = requestAnimationFrame(step);
+}
+function setRecordingUi(active) {
+  document.getElementById('simulationRecord').textContent = active ? '録画を中止' : '動画を保存';
+  document.getElementById('simulationPause').disabled = active;
+  document.getElementById('creepEmphasis').disabled = active;
+  document.getElementById('simulationPauseCriterion').disabled = active;
+  document.getElementById('simulationPauseTarget').disabled = active || document.getElementById('simulationPauseCriterion').value === 'none';
+  document.querySelectorAll('[data-simulation]').forEach((button) => { button.disabled = active; });
+  allInputs.forEach((input) => { input.disabled = active; });
+  document.getElementById('resetButton').disabled = active;
 }
 function setTotalFormula(id, downDelay, downMotion, grip, upDelay, upMotion, transfer, servo, total) {
   document.getElementById(id).innerHTML = `TM = ${format(downDelay)} + ${format(downMotion)} + <mark>${format(grip)}</mark> + ${format(upDelay)} + ${format(upMotion)} = ${format(transfer)} 秒<br>TC = ${format(transfer)} + <mark>${format(servo)}</mark> = ${format(total)} 秒`;
@@ -454,7 +714,10 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const toggleButton = document.getElementById('simulationPause');
     toggleButton.disabled = false;
     toggleButton.textContent = 'スタート';
-    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, pauseCriterion: 'none', targetValue: null, maxPosition: values.sh, maxTime: result.tt, maxVelocity: result.peakSpeed, frame: null, handUnit, cargo, carriesLoad, startOffset, values, result, isUp, scale: buildPositionScale(values, result, creepEmphasis.checked) };
+    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, pauseCriterion: 'none', targetValue: null, maxPosition: values.sh, maxTime: result.tt, maxVelocity: result.peakSpeed, frame: null, handUnit, cargo, carriesLoad, startOffset, values, result, isUp, label, key: direction, scale: buildPositionScale(values, result, creepEmphasis.checked) };
+    const recordButton = document.getElementById('simulationRecord');
+    recordButton.disabled = !VIDEO_MIME_TYPE;
+    recordButton.title = VIDEO_MIME_TYPE ? `選択中の動作を${VIDEO_MIME_TYPE.includes('mp4') ? 'MP4' : 'WebM'}動画として保存します。` : 'このブラウザは動画の書き出しに対応していません。Chrome または Edge の最新版をお使いください。';
     renderCreepZones(simulationState);
     updateAutoPauseControl();
     const renderFrame = (now) => {
@@ -534,6 +797,10 @@ document.getElementById('simulationPause').addEventListener('click', (event) => 
     setText('simulationStatus', simulationState.elapsed === 0 ? 'シミュレーションを開始しました。' : 'シミュレーションを再開しました。');
     simulationState.frame = requestAnimationFrame(simulationState.renderFrame);
   }
+});
+document.getElementById('simulationRecord').addEventListener('click', () => {
+  if (recorderState) stopRecording(true);
+  else startRecording();
 });
 document.getElementById('simulationPauseCriterion').addEventListener('change', updateAutoPauseControl);
 creepEmphasis.addEventListener('change', () => {
