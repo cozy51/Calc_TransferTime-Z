@@ -73,12 +73,12 @@
         <div class="panel chart-panel">
           <div class="chart-heading">
             <div><h2>速度線図</h2><p>縦軸：速度 ／ 横軸：時間</p></div>
-            <div class="chart-legend" aria-hidden="true"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span></div>
+            <div class="chart-legend" aria-hidden="true"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span><span class="unload-down-line">荷おろし下降</span><span class="unload-up-line">荷おろし上昇</span></div>
           </div>
           <div class="chart-wrap">
-            <canvas id="speedChart" role="img" aria-label="荷つかみ下降と荷つかみ上昇の速度時間線図"></canvas>
+            <canvas id="speedChart" role="img" aria-label="荷つかみと荷おろしの下降・上昇速度時間線図"></canvas>
           </div>
-          <div class="chart-mobile-legend"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span></div>
+          <div class="chart-mobile-legend"><span class="down-line">荷つかみ下降</span><span class="up-line">荷つかみ上昇</span><span class="unload-down-line">荷おろし下降</span><span class="unload-up-line">荷おろし上昇</span></div>
           <p class="chart-note">各区間の所要時間に沿って、クリープ・加速・最高速・減速の速度推移を表示しています。</p>
         </div>
 
@@ -86,9 +86,13 @@
           <h2>区間別詳細</h2>
           <div class="table-wrap">
             <table>
-              <thead><tr><th rowspan="2">区間</th><th rowspan="2">動作</th><th colspan="2">荷つかみ下降</th><th colspan="2">荷つかみ上昇</th></tr><tr><th>距離</th><th>時間</th><th>距離</th><th>時間</th></tr></thead>
+              <thead>
+                <tr><th rowspan="3">区間</th><th rowspan="3">動作</th><th colspan="4">荷つかみサイクル</th><th colspan="4">荷おろしサイクル</th></tr>
+                <tr><th colspan="2">下降</th><th colspan="2">上昇</th><th colspan="2">下降</th><th colspan="2">上昇</th></tr>
+                <tr><th>距離</th><th>時間</th><th>距離</th><th>時間</th><th>距離</th><th>時間</th><th>距離</th><th>時間</th></tr>
+              </thead>
               <tbody id="detailRows"></tbody>
-              <tfoot><tr><td colspan="2">昇降動作時間 TT</td><td id="downDistanceTotal">—</td><td id="downTimeTotal">—</td><td id="upDistanceTotal">—</td><td id="upTimeTotal">—</td></tr></tfoot>
+              <tfoot><tr><td colspan="2">昇降動作時間 TT</td><td id="downDistanceTotal">—</td><td id="downTimeTotal">—</td><td id="upDistanceTotal">—</td><td id="upTimeTotal">—</td><td id="unloadDownDistanceTotal">—</td><td id="unloadDownTimeTotal">—</td><td id="unloadUpDistanceTotal">—</td><td id="unloadUpTimeTotal">—</td></tr></tfoot>
             </table>
           </div>
         </div>
