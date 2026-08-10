@@ -58,20 +58,22 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .extras-head strong:last-child { color:#0b7c69; }
 .extras-row { min-height:65px; border-top:1px solid #e2e8ef; }
 .extras-name { display:grid; grid-template-columns:1fr 38px; align-items:center; font-size:15px; font-weight:600; }
-.extras-name b { color:var(--blue); text-align:center; font-size:16px; }
+.extras-name b { color:#c45a08; text-align:center; font-size:17px; }
 .extras-row>em { color:#425a74; text-align:center; font-size:15px; font-weight:700; font-style:normal; }
 .extras-group .field { height:46px; }
-.extras-group input { font-size:17px; }
+.extras-group .field { border-color:#efc39e; background:#fff8f1; }
+.extras-group input { color:#a94706; background:#fff8f1; font-size:17px; font-weight:750; }
 .results-column { display:grid; gap:24px; }
 .summary-panel { padding:27px 30px 28px; }
 .total-card { margin-top:22px; padding:24px; text-align:center; color:white; background:linear-gradient(135deg,#176dc1,#2389e4); border-radius:6px; box-shadow:0 7px 16px rgba(23,118,210,.19); }
 .total-card p { margin:0 0 5px; color:#d9ecff; font-size:13px; font-weight:600; }
+.total-card p b { display:inline-block; margin-left:4px; padding:1px 5px; color:white; border:1px solid rgba(255,255,255,.45); border-radius:3px; font-size:14px; }
 .total-card strong { font-size:48px; line-height:1; letter-spacing:.02em; }
 .total-card div span { margin-left:7px; font-size:16px; }
 .total-card small { display:block; margin-top:9px; color:#c9e5ff; font-size:12px; }
 .unload-total-card { margin-top:12px; background:linear-gradient(135deg,#087565,#159b84); box-shadow:0 7px 16px rgba(20,133,114,.18); }
 .total-equations { margin-top:14px; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
-.total-equations p { display:grid; grid-template-columns:70px 1fr; gap:5px 12px; margin:0; padding:12px 14px; border-bottom:1px solid var(--line); }
+.total-equations p { display:grid; grid-template-columns:90px 1fr; gap:5px 12px; margin:0; padding:12px 14px; border-bottom:1px solid var(--line); }
 .total-equations p:last-child { border-bottom:0; }
 .total-equations b { grid-row:1 / 3; align-self:center; color:var(--blue); font-size:13px; }
 .total-equations span { color:#52667c; font-size:11px; }
@@ -82,15 +84,26 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .summary-grid span b { color:var(--blue); }
 .summary-grid strong { margin-top:5px; font-size:23px; }
 .summary-grid small { color:var(--muted); font-size:12px; font-weight:500; }
+.summary-grid .auxiliary-time { border-color:#efc39e; background:#fff8f1; }
+.summary-grid .auxiliary-time span b,.summary-grid .auxiliary-time strong { color:#c45a08; }
+.motion-summary-block { margin-top:18px; padding-top:16px; border-top:1px solid var(--line); }
+.motion-summary-block h3 { margin:0; color:#52667c; font-size:14px; }
+.motion-summary-block .summary-grid { margin-top:10px; }
+.unload-summary h3 { color:#0b7c69; }
 .cycle-summary { display:grid; grid-template-columns:64px 1fr 1fr; margin-top:14px; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
 .cycle-summary>div { display:flex; flex-direction:column; justify-content:center; gap:5px; padding:14px; border-bottom:1px solid var(--line); }
 .cycle-summary>div:nth-last-child(-n+3) { border-bottom:0; }
 .cycle-summary span { color:var(--muted); font-size:12px; }
 .cycle-summary strong { font-size:16px; }
+.cycle-summary .delay-item { background:#fff8f1; }
+.delay-item span b,.delay-item strong { color:#c45a08; }
 .cycle-summary .cycle-label { align-items:center; padding:10px; color:white; font-weight:700; }
 .cycle-label.down { background:#1776d2; }
 .cycle-label.up { background:#148572; }
+.cycle-label.unload-down { background:#e07a16; }
+.cycle-label.unload-up { background:#8c5ac7; }
 .formula { margin-top:15px; padding:10px; color:#68778a; text-align:center; background:#f5f7fa; border-radius:4px; font-size:11px; }
+.formula b { color:var(--blue); font-size:14px; }
 .warning { margin-top:18px; padding:12px; color:var(--danger); background:#fef3f2; border:1px solid #fecdca; border-radius:4px; font-size:13px; }
 .chart-panel { padding:24px 30px 20px; }
 .chart-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; padding-bottom:15px; border-bottom:1px solid var(--line); }

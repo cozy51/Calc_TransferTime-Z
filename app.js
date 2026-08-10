@@ -10,7 +10,7 @@ const motionFields = [
   { key: 'tr', group: 'delay', label: '制御遅れ', symbol: 'TR', unit: 's', down: 0.21, up: 0.55, unloadDown: 0.26, unloadUp: 0.13 }
 ];
 const extras = { tg: 0.27, 'unload-tg': 0.21, servo: 0.6, 'unload-servo': 0.6 };
-const chartSeriesNames = ['荷つかみ下降', '荷つかみ上昇', '荷おろし下降', '荷おろし上昇'];
+const chartSeriesNames = ['荷つかみ・下降時', '荷つかみ・上昇時', '荷おろし・下降時', '荷おろし・上昇時'];
 const segmentNames = ['上端クリープ', '加速', '定速', '減速', '下端クリープ'];
 
 const inputContainer = document.getElementById('motionInputs');
@@ -23,11 +23,11 @@ motionGroups.forEach((fields) => {
   const rows = fields.map((field, index) => `
     <div class="motion-row">
       <label for="down-${field.key}"><span>${field.label}</span><b>${field.symbol}</b></label>
-      ${index === 0 ? `<em class="unit" style="grid-row:span ${fields.length}"><span>${field.unit}</span><small>共通</small></em>` : ''}
-      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ下降 ${field.label}" /></span>
-      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ上昇 ${field.label}" /></span>
-      <span class="field"><input id="unloadDown-${field.key}" type="number" min="0" step="any" value="${field.unloadDown}" aria-label="荷おろし下降 ${field.label}" /></span>
-      <span class="field"><input id="unloadUp-${field.key}" type="number" min="0" step="any" value="${field.unloadUp}" aria-label="荷おろし上昇 ${field.label}" /></span>
+      ${index === 0 ? `<em class="unit" style="grid-row:span ${fields.length}"><span>${field.unit}</span>${fields.length > 1 ? '<small>共通</small>' : ''}</em>` : ''}
+      <span class="field"><input id="down-${field.key}" type="number" min="0" step="any" value="${field.down}" aria-label="荷つかみ動作・下降時 ${field.label}" /></span>
+      <span class="field"><input id="up-${field.key}" type="number" min="0" step="any" value="${field.up}" aria-label="荷つかみ動作・上昇時 ${field.label}" /></span>
+      <span class="field"><input id="unloadDown-${field.key}" type="number" min="0" step="any" value="${field.unloadDown}" aria-label="荷おろし動作・下降時 ${field.label}" /></span>
+      <span class="field"><input id="unloadUp-${field.key}" type="number" min="0" step="any" value="${field.unloadUp}" aria-label="荷おろし動作・上昇時 ${field.label}" /></span>
     </div>`).join('');
   inputContainer.insertAdjacentHTML('beforeend', `<div class="motion-group">${rows}</div>`);
 });
@@ -149,7 +149,7 @@ function drawSpeedChart(series = []) {
   }
 }
 function renderEmpty() {
-  ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
+  ['totalTime', 'unloadTotalTime', 'transferTime', 'servoResult', 'downMotion', 'downDelay', 'upMotion', 'upDelay', 'unloadTransferTime', 'unloadServoResult', 'unloadDownMotion', 'unloadDownDelay', 'unloadUpMotion', 'unloadUpDelay', 'downDistanceTotal', 'downTimeTotal', 'upDistanceTotal', 'upTimeTotal', 'unloadDownDistanceTotal', 'unloadDownTimeTotal', 'unloadUpDistanceTotal', 'unloadUpTimeTotal'].forEach((id) => setText(id, '—'));
   setText('totalMilliseconds', '— ms');
   setText('unloadTotalMilliseconds', '— ms');
   setText('pickupTotalFormula', '—');
@@ -200,14 +200,20 @@ function calculate() {
   setText('totalMilliseconds', `${format(total * 1000, 0)} ms`);
   setText('unloadTotalTime', format(unloadTotal));
   setText('unloadTotalMilliseconds', `${format(unloadTotal * 1000, 0)} ms`);
-  setText('pickupTotalFormula', `${format(downResult.tt)} + ${format(down.tr)} + ${format(tg)} + ${format(upResult.tt)} + ${format(up.tr)} + ${format(servo)} = ${format(total)} 秒`);
-  setText('unloadTotalFormula', `${format(unloadDownResult.tt)} + ${format(unloadDown.tr)} + ${format(unloadTg)} + ${format(unloadUpResult.tt)} + ${format(unloadUp.tr)} + ${format(unloadServo)} = ${format(unloadTotal)} 秒`);
+  setText('pickupTotalFormula', `TC = ${format(down.tr)} + ${format(downResult.tt)} + ${format(tg)} + ${format(up.tr)} + ${format(upResult.tt)} + ${format(servo)} = ${format(total)} 秒`);
+  setText('unloadTotalFormula', `TC = ${format(unloadDown.tr)} + ${format(unloadDownResult.tt)} + ${format(unloadTg)} + ${format(unloadUp.tr)} + ${format(unloadUpResult.tt)} + ${format(unloadServo)} = ${format(unloadTotal)} 秒`);
   setText('transferTime', `${format(actualTransfer)} 秒`);
   setText('servoResult', `${format(servo)} 秒`);
   setText('downMotion', `${format(downResult.tt)} 秒`);
   setText('downDelay', `${format(down.tr)} 秒`);
   setText('upMotion', `${format(upResult.tt)} 秒`);
   setText('upDelay', `${format(up.tr)} 秒`);
+  setText('unloadTransferTime', `${format(unloadActualTransfer)} 秒`);
+  setText('unloadServoResult', `${format(unloadServo)} 秒`);
+  setText('unloadDownMotion', `${format(unloadDownResult.tt)} 秒`);
+  setText('unloadDownDelay', `${format(unloadDown.tr)} 秒`);
+  setText('unloadUpMotion', `${format(unloadUpResult.tt)} 秒`);
+  setText('unloadUpDelay', `${format(unloadUp.tr)} 秒`);
 
   [['down', down, downResult], ['up', up, upResult], ['unloadDown', unloadDown, unloadDownResult], ['unloadUp', unloadUp, unloadUpResult]].forEach(([direction, input, result]) => {
     result.distances.forEach((distance, index) => setText(`${direction}-distance-${index + 1}`, `${format(distance)} mm`));
