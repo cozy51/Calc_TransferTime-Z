@@ -3,8 +3,12 @@
 body { margin:0; color:var(--ink); background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif; font-variant-numeric:tabular-nums; }
 .app-header { color:white; background:linear-gradient(110deg,#10233c 0%,#173b66 100%); border-bottom:4px solid var(--blue); }
 .header-inner { width:min(1280px,calc(100% - 64px)); min-height:132px; margin:auto; display:flex; align-items:center; gap:22px; }
-.brand-mark { width:55px; height:55px; border:2px solid #78bafd; position:relative; display:grid; place-content:center; gap:7px; transform:rotate(45deg); }
-.brand-mark span { width:24px; height:4px; display:block; background:#78bafd; }
+.brand-mark { width:64px; height:64px; flex:0 0 64px; display:grid; place-items:center; border:1px solid rgba(120,186,253,.55); border-radius:12px; background:rgba(7,24,44,.34); box-shadow:inset 0 0 0 3px rgba(120,186,253,.07); }
+.brand-mark svg { width:48px; height:48px; overflow:visible; }
+.brand-mark path { fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.logo-rail { stroke:#78bafd; stroke-width:3; opacity:.72; }
+.logo-arrow { stroke:#fff; stroke-width:3.5; }
+.logo-cargo { fill:#1776d2 !important; stroke:#b9dcff; stroke-width:2.5; }
 .header-inner>div:last-child { padding-left:4px; }
 .eyebrow { margin:0 0 2px; color:#78bafd; font-size:11px; font-weight:700; letter-spacing:.22em; }
 h1 { margin:0; font-size:31px; letter-spacing:.02em; font-weight:680; }
