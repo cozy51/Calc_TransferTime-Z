@@ -95,6 +95,8 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .cycle-summary>div:nth-last-child(-n+3) { border-bottom:0; }
 .cycle-summary span { color:var(--muted); font-size:12px; }
 .cycle-summary strong { font-size:16px; }
+.cycle-summary .delay-item { background:#fff8f1; }
+.delay-item span b,.delay-item strong { color:#c45a08; }
 .cycle-summary .cycle-label { align-items:center; padding:10px; color:white; font-weight:700; }
 .cycle-label.down { background:#1776d2; }
 .cycle-label.up { background:#148572; }
