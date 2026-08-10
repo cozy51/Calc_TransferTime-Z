@@ -125,9 +125,10 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .simulation-telemetry span { color:var(--muted); font-size:11px; }
 .simulation-telemetry strong { color:#183a5f; font-size:15px; }
 .auto-pause-control { display:flex; align-items:flex-end; justify-content:space-between; gap:15px; margin-top:10px; padding:10px 12px; background:#fff8f1; border:1px solid #efc39e; border-radius:4px; }
-.auto-pause-control label { min-width:230px; }
+.auto-pause-control label { min-width:380px; }
 .auto-pause-control label>span:first-child { margin-bottom:5px; color:#8a430b; font-size:12px; font-weight:700; }
 .auto-pause-field { display:flex; height:38px; overflow:hidden; background:white; border:1px solid #d7a97f; border-radius:4px; }
+.auto-pause-field select { min-width:112px; padding:0 8px; color:#73563e; background:#fff8f1; border:0; border-right:1px solid #efc39e; font-weight:700; outline:0; }
 .auto-pause-field input { font-size:15px; text-align:right; }
 .auto-pause-field em { min-width:48px; display:grid; place-content:center; color:#8a430b; background:#fff0dc; border-left:1px solid #efc39e; font-size:13px; font-weight:700; font-style:normal; }
 .auto-pause-control small { color:#73563e; font-size:11px; line-height:1.5; }

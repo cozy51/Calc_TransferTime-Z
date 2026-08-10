@@ -147,8 +147,8 @@
             <div><span>加速度</span><strong id="simulationAcceleration">0.00 mm/s²</strong></div>
           </div>
           <div class="auto-pause-control">
-            <label for="simulationPausePosition"><span>自動一時停止位置</span><span class="auto-pause-field"><input id="simulationPausePosition" type="number" min="0" step="any" placeholder="未指定" /><em>mm</em></span></label>
-            <small>移動開始位置を0 mmとして、指定位置へ到達すると自動で一時停止します。</small>
+            <label for="simulationPauseTarget"><span>自動一時停止条件</span><span class="auto-pause-field"><select id="simulationPauseCriterion" aria-label="自動一時停止の基準"><option value="position">位置基準</option><option value="time">時間基準</option><option value="velocity">速度基準</option><option value="none">指定なし</option></select><input id="simulationPauseTarget" type="number" min="0" step="any" placeholder="未指定" /><em id="simulationPauseUnit">mm</em></span></label>
+            <small>位置・時間・速度のいずれか1つを選択し、指定値へ到達すると自動で一時停止します。</small>
           </div>
           <button id="simulationPause" class="simulation-pause" type="button" disabled>スタート</button>
           <div class="simulation-stage" aria-label="昇降ユニットに対してハンドユニットが上下する模式図">

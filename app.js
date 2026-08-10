@@ -85,6 +85,16 @@ function setSimulationTelemetry(elapsed = 0, position = 0, velocity = 0, acceler
   setText('simulationVelocity', `${format(velocity)} mm/s`);
   setText('simulationAcceleration', `${format(acceleration)} mm/s²`);
 }
+function updateAutoPauseControl() {
+  const criterion = document.getElementById('simulationPauseCriterion').value;
+  const input = document.getElementById('simulationPauseTarget');
+  const units = { position: 'mm', time: 's', velocity: 'mm/s', none: '—' };
+  const limits = simulationState ? { position: simulationState.maxPosition, time: simulationState.maxTime, velocity: simulationState.maxVelocity } : {};
+  setText('simulationPauseUnit', units[criterion]);
+  input.disabled = criterion === 'none';
+  input.max = limits[criterion] ?? '';
+  if (criterion === 'none') input.value = '';
+}
 function getKinematics(values, result, elapsed) {
   const [t1, t2, t3, t4, t5] = result.times;
   let time = elapsed;
@@ -314,8 +324,6 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const carriesLoad = direction === 'up' || direction === 'unloadDown';
     const handUnit = document.getElementById('handUnit');
     const cargo = document.getElementById('simulationCargo');
-    const pausePosition = document.getElementById('simulationPausePosition');
-    pausePosition.max = values.sh;
     const label = button.textContent;
     setText('simulationTime', `動作時間 TT：${format(result.tt)} 秒`);
     setText('simulationStatus', `${label}を選択しました。「スタート」で再生します。`);
@@ -326,7 +334,8 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
     const toggleButton = document.getElementById('simulationPause');
     toggleButton.disabled = false;
     toggleButton.textContent = 'スタート';
-    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, targetPosition: null, maxPosition: values.sh, frame: null, handUnit, cargo, carriesLoad, startOffset };
+    simulationState = { elapsed: 0, lastTime: 0, paused: true, started: false, finished: false, autoPaused: false, pauseCriterion: 'none', targetValue: null, maxPosition: values.sh, maxTime: result.tt, maxVelocity: values.v2, frame: null, handUnit, cargo, carriesLoad, startOffset };
+    updateAutoPauseControl();
     const renderFrame = (now) => {
       if (!simulationState || simulationState.paused) return;
       simulationState.elapsed = Math.min(simulationState.elapsed + (now - simulationState.lastTime) / 1000, result.tt);
@@ -337,11 +346,14 @@ document.querySelectorAll('[data-simulation]').forEach((button) => {
       cargo.style.transform = `translate(-50%, ${carriesLoad ? offset - 345 : 0}px)`;
       const current = getKinematics(values, result, simulationState.elapsed);
       setSimulationTelemetry(simulationState.elapsed, current.position, current.velocity, current.acceleration);
-      if (simulationState.targetPosition !== null && !simulationState.autoPaused && current.position >= simulationState.targetPosition) {
+      const measurements = { position: current.position, time: simulationState.elapsed, velocity: current.velocity };
+      if (simulationState.targetValue !== null && !simulationState.autoPaused && measurements[simulationState.pauseCriterion] >= simulationState.targetValue) {
         simulationState.paused = true;
         simulationState.autoPaused = true;
         toggleButton.textContent = '再開';
-        setText('simulationStatus', `指定位置 ${format(simulationState.targetPosition)} mm に到達したため、自動で一時停止しました。`);
+        const labels = { position: ['位置', 'mm'], time: ['時間', 's'], velocity: ['速度', 'mm/s'] };
+        const [criterionLabel, unit] = labels[simulationState.pauseCriterion];
+        setText('simulationStatus', `指定${criterionLabel} ${format(simulationState.targetValue)} ${unit} に到達したため、自動で一時停止しました。`);
         return;
       }
       if (simulationState.elapsed >= result.tt) {
@@ -367,13 +379,18 @@ document.getElementById('simulationPause').addEventListener('click', (event) => 
     setSimulationTelemetry();
   }
   if (!simulationState.started) {
-    const rawTarget = document.getElementById('simulationPausePosition').value.trim();
-    const targetPosition = rawTarget === '' ? null : Number(rawTarget);
-    if (targetPosition !== null && (!Number.isFinite(targetPosition) || targetPosition < 0 || targetPosition > simulationState.maxPosition)) {
-      setText('simulationStatus', `自動一時停止位置は0～${format(simulationState.maxPosition)} mmで指定してください。`);
+    const criterion = document.getElementById('simulationPauseCriterion').value;
+    const rawTarget = document.getElementById('simulationPauseTarget').value.trim();
+    const targetValue = criterion === 'none' || rawTarget === '' ? null : Number(rawTarget);
+    const limits = { position: simulationState.maxPosition, time: simulationState.maxTime, velocity: simulationState.maxVelocity };
+    const labels = { position: ['位置', 'mm'], time: ['時間', 's'], velocity: ['速度', 'mm/s'] };
+    if (targetValue !== null && (!Number.isFinite(targetValue) || targetValue < 0 || targetValue > limits[criterion])) {
+      const [criterionLabel, unit] = labels[criterion];
+      setText('simulationStatus', `自動一時停止${criterionLabel}は0～${format(limits[criterion])} ${unit}で指定してください。`);
       return;
     }
-    simulationState.targetPosition = targetPosition;
+    simulationState.pauseCriterion = criterion;
+    simulationState.targetValue = targetValue;
     simulationState.autoPaused = false;
     simulationState.started = true;
     simulationState.paused = false;
@@ -390,6 +407,7 @@ document.getElementById('simulationPause').addEventListener('click', (event) => 
     simulationState.frame = requestAnimationFrame(simulationState.renderFrame);
   }
 });
+document.getElementById('simulationPauseCriterion').addEventListener('change', updateAutoPauseControl);
 document.getElementById('resetButton').addEventListener('click', () => {
   motionFields.forEach((field) => {
     ['down', 'up', 'unloadDown', 'unloadUp'].forEach((direction) => { document.getElementById(`${direction}-${field.key}`).value = field[direction]; });
