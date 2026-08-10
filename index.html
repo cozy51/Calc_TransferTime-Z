@@ -70,6 +70,35 @@
             </table>
           </div>
         </div>
+
+        <div class="panel calculation-panel">
+          <div class="calculation-heading">
+            <div>
+              <h2>計算式</h2>
+              <p>入力値から各区間と移載時間を次の式で計算します。</p>
+            </div>
+            <span>FORMULA</span>
+          </div>
+          <div class="formula-section">
+            <h3>区間時間・距離</h3>
+            <div class="formula-grid">
+              <div><b>T1</b><code>S1 ÷ V1</code><span>上端クリープ時間</span></div>
+              <div><b>T2</b><code>V2 ÷ A1</code><span>加速時間</span></div>
+              <div><b>S2</b><code>V2 × T2 ÷ 2</code><span>昇降加速距離</span></div>
+              <div><b>T4</b><code>V2 ÷ A2</code><span>減速時間</span></div>
+              <div><b>S4</b><code>V2 × T4 ÷ 2</code><span>昇降減速距離</span></div>
+              <div><b>S3</b><code>SH − (S1 + S2 + S4 + S5)</code><span>最高速昇降距離</span></div>
+              <div><b>T3</b><code>S3 ÷ V2</code><span>最高速昇降時間</span></div>
+              <div><b>T5</b><code>S5 ÷ V3</code><span>下端クリープ時間</span></div>
+            </div>
+          </div>
+          <div class="formula-section total-formulas">
+            <h3>合計時間</h3>
+            <div class="total-formula-row"><b>昇降動作時間 <span>TT</span></b><code>T1 + T2 + T3 + T4 + T5</code></div>
+            <div class="total-formula-row"><b>実移載時間</b><code>下降TT + 下降TR + TG + 上昇TT + 上昇TR</code></div>
+            <div class="total-formula-row emphasis"><b>総移載時間</b><code>実移載時間 + サーボ切替時間</code></div>
+          </div>
+        </div>
       </section>
     </main>
     <footer>TransferCycleTime <span>•</span> TOOL Transfer Engineering Calculator</footer>
