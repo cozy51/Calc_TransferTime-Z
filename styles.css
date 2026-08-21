@@ -81,10 +81,12 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .extras-group .specification-input-row input { color:#087443; background:#f0fbf4; }
 .results-column { display:grid; gap:24px; }
 .summary-panel { padding:27px 30px 28px; }
-.total-card { margin-top:22px; padding:24px; text-align:center; color:white; background:linear-gradient(135deg,#176dc1,#2389e4); border-radius:6px; box-shadow:0 7px 16px rgba(23,118,210,.19); }
+.total-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px; }
+.total-card { padding:21px 18px; text-align:center; color:white; background:linear-gradient(135deg,#176dc1,#2389e4); border-radius:6px; box-shadow:0 7px 16px rgba(23,118,210,.19); }
 .total-card p { margin:0 0 5px; color:#d9ecff; font-size:13px; font-weight:600; }
+.total-card p .nowrap { white-space:nowrap; }
 .total-card p b { display:inline-block; margin-left:4px; padding:1px 5px; color:white; border:1px solid rgba(255,255,255,.45); border-radius:3px; font-size:14px; }
-.total-card strong { font-size:48px; line-height:1; letter-spacing:.02em; }
+.total-card strong { font-size:42px; line-height:1; letter-spacing:.02em; }
 .total-card div span { margin-left:7px; font-size:16px; }
 .total-card small { display:block; margin-top:9px; color:#c9e5ff; font-size:12px; }
 .total-card .specification-row { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:15px; padding-top:13px; border-top:1px solid rgba(255,255,255,.28); }
@@ -93,7 +95,7 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .judgement.passed { color:#087443; background:#dcfae6; }
 .judgement.failed { color:white; background:#d92d20; }
 .judgement.pending { color:#52667c; background:#eef2f6; }
-.unload-total-card { margin-top:12px; background:linear-gradient(135deg,#087565,#159b84); box-shadow:0 7px 16px rgba(20,133,114,.18); }
+.unload-total-card { background:linear-gradient(135deg,#087565,#159b84); box-shadow:0 7px 16px rgba(20,133,114,.18); }
 .total-equations { margin-top:14px; border:1px solid var(--line); border-radius:5px; overflow:hidden; }
 .total-equations p { display:grid; grid-template-columns:90px 1fr; gap:5px 12px; margin:0; padding:12px 14px; border-bottom:1px solid var(--line); }
 .total-equations p:last-child { border-bottom:0; }
@@ -119,11 +121,7 @@ input { width:100%; min-width:0; border:0; outline:0; padding:0 11px; color:var(
 .cycle-summary span { color:var(--muted); font-size:12px; }
 .cycle-summary strong { font-size:16px; }
 .cycle-summary .delay-item,.cycle-summary .delay-item span b,.cycle-summary .delay-item strong { color:inherit; background:var(--white); }
-.cycle-summary .cycle-label { align-items:center; padding:10px; color:white; font-weight:700; }
-.cycle-label.down { background:#1776d2; }
-.cycle-label.up { background:#148572; }
-.cycle-label.unload-down { background:#e07a16; }
-.cycle-label.unload-up { background:#8c5ac7; }
+.cycle-summary .cycle-label { align-items:center; padding:10px; color:#42566e; background:#eef2f6; border-right:1px solid var(--line); font-weight:700; }
 .formula { margin-top:15px; padding:12px; color:#52667c; text-align:center; background:#f5f7fa; border-radius:4px; font-size:14px; font-weight:600; line-height:1.6; }
 .formula b { color:var(--blue); font-size:16px; }
 .warning { margin-top:18px; padding:12px; color:var(--danger); background:#fef3f2; border:1px solid #fecdca; border-radius:4px; font-size:13px; }
@@ -222,4 +220,4 @@ tfoot td { border:0; background:#f8fafc; font-weight:700; }
 footer { padding:22px; color:#8794a3; text-align:center; border-top:1px solid #dce4ed; font-size:11px; letter-spacing:.04em; }
 footer span { margin:0 8px; color:#b7c0ca; }
 @media (max-width:1560px) { .layout { grid-template-columns:1fr; } }
-@media (max-width:760px) { :root { --shell-gutter:14px; } .header-inner { min-height:110px; } h1 { font-size:25px; } .layout { margin-top:18px; } .input-panel,.summary-panel,.simulation-panel,.detail-panel,.calculation-panel,.chart-panel { padding:21px 14px; } .input-panel { overflow-x:auto; contain:inline-size; } .cycle-head,.direction-head,.shared-stroke-row,.motion-group { min-width:720px; grid-template-columns:180px 65px repeat(4,105px); gap:0 6px; } .extras-table { min-width:500px; } .extras-head,.extras-row { grid-template-columns:180px 65px repeat(2,115px); gap:0 6px; } .motion-row>label span { font-size:13px; } .input-grid,.summary-grid,.formula-grid { grid-template-columns:1fr; } .cycle-summary { grid-template-columns:68px 1fr 1fr; } .simulation-heading { display:block; } .simulation-heading>strong { display:inline-block; margin-top:9px; } .simulation-controls,.simulation-telemetry { grid-template-columns:1fr 1fr; } .auto-pause-control { display:block; } .auto-pause-control small { display:block; margin-top:7px; } .stage-options { display:block; } .stage-options small { display:block; margin-top:6px; } .total-formula-row { grid-template-columns:1fr; gap:6px; } .chart-legend { display:none; } .chart-mobile-legend { display:flex; } .header-inner { flex-wrap:wrap; padding:13px 0; } .header-inner>div:nth-of-type(2) { flex:1 1 0; min-width:0; } }
+@media (max-width:760px) { :root { --shell-gutter:14px; } .total-cards { grid-template-columns:1fr; } .header-inner { min-height:110px; } h1 { font-size:25px; } .layout { margin-top:18px; } .input-panel,.summary-panel,.simulation-panel,.detail-panel,.calculation-panel,.chart-panel { padding:21px 14px; } .input-panel { overflow-x:auto; contain:inline-size; } .cycle-head,.direction-head,.shared-stroke-row,.motion-group { min-width:720px; grid-template-columns:180px 65px repeat(4,105px); gap:0 6px; } .extras-table { min-width:500px; } .extras-head,.extras-row { grid-template-columns:180px 65px repeat(2,115px); gap:0 6px; } .motion-row>label span { font-size:13px; } .input-grid,.summary-grid,.formula-grid { grid-template-columns:1fr; } .cycle-summary { grid-template-columns:68px 1fr 1fr; } .simulation-heading { display:block; } .simulation-heading>strong { display:inline-block; margin-top:9px; } .simulation-controls,.simulation-telemetry { grid-template-columns:1fr 1fr; } .auto-pause-control { display:block; } .auto-pause-control small { display:block; margin-top:7px; } .stage-options { display:block; } .stage-options small { display:block; margin-top:6px; } .total-formula-row { grid-template-columns:1fr; gap:6px; } .chart-legend { display:none; } .chart-mobile-legend { display:flex; } .header-inner { flex-wrap:wrap; padding:13px 0; } .header-inner>div:nth-of-type(2) { flex:1 1 0; min-width:0; } }

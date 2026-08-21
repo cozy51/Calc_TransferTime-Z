@@ -105,17 +105,19 @@
         <div class="panel summary-panel">
           <div class="section-heading"><div><span class="step">02</span><h2 id="result-title">計算結果</h2></div></div>
           <div id="warning" class="warning" role="alert" hidden></div>
-          <div class="total-card">
-            <p>荷つかみ動作・総移載時間 <b>TC</b>（Stop − Start）</p>
-            <div><strong id="totalTime">—</strong><span>秒</span></div>
-            <small id="totalMilliseconds">— ms</small>
-            <div class="specification-row"><span id="pickupSpecificationDisplay">仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
-          </div>
-          <div class="total-card unload-total-card">
-            <p>荷おろし動作・総移載時間 <b>TC</b>（Stop − Start）</p>
-            <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
-            <small id="unloadTotalMilliseconds">— ms</small>
-            <div class="specification-row"><span id="unloadSpecificationDisplay">仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
+          <div class="total-cards">
+            <div class="total-card">
+              <p>荷つかみ動作・総移載時間 <b>TC</b><span class="nowrap">（Stop − Start）</span></p>
+              <div><strong id="totalTime">—</strong><span>秒</span></div>
+              <small id="totalMilliseconds">— ms</small>
+              <div class="specification-row"><span id="pickupSpecificationDisplay">仕様値 7.7秒以下</span><em id="pickupJudgement" class="judgement pending">判定不可</em></div>
+            </div>
+            <div class="total-card unload-total-card">
+              <p>荷おろし動作・総移載時間 <b>TC</b><span class="nowrap">（Stop − Start）</span></p>
+              <div><strong id="unloadTotalTime">—</strong><span>秒</span></div>
+              <small id="unloadTotalMilliseconds">— ms</small>
+              <div class="specification-row"><span id="unloadSpecificationDisplay">仕様値 7.6秒以下</span><em id="unloadJudgement" class="judgement pending">判定不可</em></div>
+            </div>
           </div>
           <div class="total-equations">
             <p><b>荷つかみ動作</b><span>TM = TR（下降時）+ TT（下降時）+ <mark>TG</mark> + TR（上昇時）+ TT（上昇時）</span><span>TC = TM + <mark>TS</mark></span><code id="pickupTotalFormula">—</code></p>
